@@ -3,13 +3,13 @@
 //=============================================================================
 
 /*:
- * @plugindesc Link up another skill after activating a skill
+ * @plugindesc Attack with each weapon equipped when using certain skill
  * @author Souji Kenzaki
  *
  * @help This plugin does not provide plugin commands.
  *
- * When <linkskill:3> is written in a weapon's note field, 
- * skill id # 3 is used after the original skill is activated.
+ * When <weaponchain:3> is written in a skill's note field, 
+ * the character will repeat skill with each weapon equipped in main hand. 
  * If the target type is same for both skills they will have same target. otherwise, target will be chosen randomly.
  *
  */
@@ -20,13 +20,12 @@
  *
  * @help このプラグインにはプラグインコマンドはありません。
  *
- * スキルの「メモ」欄に、<linkskill:3> と書いた場合、
- * そのスキルの発動直後、スキルID=3のスキルが更に発動します。
+ * スキルの「メモ」欄に、<weaponchain:3> と書いた場合、
+ * 装備しているすべての武器で一回ずつ該当のスキルを繰り返します。
  *
  * ※更に発動するスキルのターゲットが選択可能な場合ターゲットが両方敵単体、或いは両方味方単体だった場合同じターゲットへ。そうでない場合はランダムにターゲットを選択します。
  * 他の場合は敵全体など、技自体の設定が優先されます。
  *
- * ※サポートが打ち切られておりますが、一応Yanfly氏のBattleSysCTBで動くように作っております
  */
 
 (function() {
