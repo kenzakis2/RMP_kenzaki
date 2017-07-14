@@ -39,9 +39,9 @@ ChainSkill/
 特定の属性の攻撃を受けた際、設定された確率で特定のスキルを発動し反撃する。
 
 
-→LinkSkill.js
+→LinkActionSkill.js
 
-特定のスキルを発動した際、連鎖して次のスキルを発動する。
+スキル連鎖、及び属性へのスキルでの反撃を可能にする。旧「LinkSkill」「CounterAfterAtk」の統合版。
 
 
 →WeaponChainSkill
