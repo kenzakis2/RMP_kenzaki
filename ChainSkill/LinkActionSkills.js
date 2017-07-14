@@ -3,7 +3,7 @@
 //=============================================================================
 
 /*:
- * @plugindesc Link up another skill after activating a skill
+ * @plugindesc Enable Reactions to skill usage such as chaining and counter with another skill
  * @author Souji Kenzaki
  *
  * @help This plugin does not provide plugin commands.
@@ -22,7 +22,7 @@
  */
 
 /*:ja
- * @plugindesc スキル後、連動して次のスキルを発動します。
+ * @plugindesc スキルへの反応関連（連鎖、反撃）
  * @author 剣崎宗二
  *
  * @help このプラグインにはプラグインコマンドはありません。
@@ -95,7 +95,6 @@ BattleManager.endAction = function() {
   //console.log(this.exActionList);
   if (this.exActionList.length > 0)
   {
-    console.log("exe");
     var nextAction = this.exActionList.shift();
     this._subject = nextAction.subject();
     if (this._subject)
@@ -203,7 +202,6 @@ Game_Action.prototype.checkElementkzk = function() {
         elements.push(this.item().damage.elementId);
     }
   }
-  console.log(elements);
   return elements;
 };
 
