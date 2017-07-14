@@ -102,7 +102,10 @@ BattleManager.endAction = function() {
       this._subject._actions.unshift(nextAction);
       if(this.isCTB && this.isCTB()) 
       {
+        
+        this._subject.kzkCounter = true;
         this.startCTBAction(this._subject);
+        
       }
       else
       {
@@ -144,6 +147,20 @@ BattleManager.generateLinkedAction = function() {
 };
 
 //-----------------------Counters---------------------------------------------
+var Game_Battler_prototype_endTurnAllCTB = Game_Battler.prototype.endTurnAllCTB;
+Game_Battler.prototype.endTurnAllCTB = function() {
+    if (this.kzkCounter)
+    {
+      if (this.battler()) this.battler().refreshMotion();
+      if (BattleManager.isTickBased()) this.onTurnEnd();
+      this.kzkCounter = false;
+    }
+    else
+    {
+      Game_Battler_prototype_endTurnAllCTB.call(this);
+    }
+};
+
 BattleManager.counterRateElement = function(action, target) {
     //targetの全てのステートをスキャンし、itemUsedの該当Elementへの確率を算出
     //計算し、反撃実行されるかどうかを。
