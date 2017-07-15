@@ -19,6 +19,13 @@
  * When attacked with [Element ID], Counter with [Probability（%）] using Skill with [Skill Id].
  *　Is compatible with Multi-Element by YEP_ElementCore.
  *
+ * <counter_exaustturn>
+ * When this tag exists along with elementcounter, the counter atk will count as an actual action, 
+ * reset CTB charge and reduce the duration of states which progress at "end of action" 
+ *
+ * <counter_ignorebind>
+ * When this tag exists along with elementcounter, counter will happen 
+ * even when character is affected by disabling states such as sleep.
  */
 
 /*:ja
@@ -38,6 +45,14 @@
  * [属性ID]の属性の攻撃を受けた際、[カウンター確率]の確率で,[反撃用スキルID]を発動します。
  *　YEP_ElementCoreによる複数属性対応。
  *
+ * <counter_exaustturn>
+ * このタグがelementcounterと同時に使われた際、 反撃は追加した1行動として扱われ、 
+ * CTBの行動ゲージがリセットされるとともに「行動終了時に持続時間が変動する」ステートの持続時間を実際に1行動分、動かします。 
+ *
+ * <counter_ignorebind>
+ * このタグがelementcounterと同時に使われた際、 例え行動不能のステートを受けていても
+ * 強制的に反撃します。
+ * 
  * ※サポートが打ち切られておりますが、一応Yanfly氏のBattleSysCTBで動くように作っております
  */
 (function() {
@@ -97,13 +112,13 @@ BattleManager.endAction = function() {
   {
     var nextAction = this.exActionList.shift();
     this._subject = nextAction.subject();
-    if (this._subject)
+    if (this._subject && (this._subject.canMove() || nextAction.counter_ignorebind))
     {
       this._subject._actions.unshift(nextAction);
       if(this.isCTB && this.isCTB()) 
       {
         
-        this._subject.kzkCounter = true;
+        this._subject.kzkCounter = !nextAction.counter_exaustturn;
         this.startCTBAction(this._subject);
         
       }
@@ -152,13 +167,30 @@ Game_Battler.prototype.endTurnAllCTB = function() {
     if (this.kzkCounter)
     {
       if (this.battler()) this.battler().refreshMotion();
-      if (BattleManager.isTickBased()) this.onTurnEnd();
+      //if (BattleManager.isTickBased()) this.onTurnEnd();
       this.kzkCounter = false;
     }
     else
     {
       Game_Battler_prototype_endTurnAllCTB.call(this);
     }
+};
+
+var Game_BattlerBase_prototype_updateStateActionEnd = Game_BattlerBase.prototype.updateStateActionEnd;
+Game_BattlerBase.prototype.updateStateActionEnd = function() {
+  if (!this.kzkCounter)
+  {
+    Game_BattlerBase_prototype_updateStateActionEnd.call(this);
+  }
+};
+
+
+var Game_BattlerBase_prototype_updateStateTurns = Game_BattlerBase.prototype.updateStateTurns;
+Game_BattlerBase.prototype.updateStateTurns = function() {
+  if (!this.kzkCounter)
+  {
+    Game_BattlerBase_prototype_updateStateTurns.call(this);
+  }
 };
 
 BattleManager.counterRateElement = function(action, target) {
@@ -196,6 +228,8 @@ Game_BattlerBase.prototype.calcSkillCounter = function(action) {
               var newaction = new Game_Action(target, true);
               newaction.setSkill(counterSkill);
               newaction._targetIndex = subject.index();
+              newaction.counter_ignorebind = state.meta.counter_ignorebind;
+              newaction.counter_exaustturn = state.meta.counter_exaustturn;
               counterList.push(newaction);
            }
         }
