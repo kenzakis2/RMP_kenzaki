@@ -35,7 +35,7 @@
  * @help このプラグインにはプラグインコマンドはありません。
  *
  * スキルメモ欄用
- * <linkskill:[連動スキルID]>
+ * <linkskill:[連鎖確率（%）],[連動スキルID]>
  * このスキルの発動直後、[連動スキルID]で指定されたスキルが更に発動します。
  * ※更に発動するスキルのターゲットが選択可能な場合ターゲットが両方敵単体、或いは両方味方単体だった場合同じターゲットへ。そうでない場合はランダムにターゲットを選択します。
  * 他の場合は敵全体など、技自体の設定が優先されます。
@@ -62,6 +62,9 @@
  * 
  * <counteroncrit>
  * このタグが反撃、連動タグと同時に使われた際、反応元のアクションがクリティカルした場合のみ反撃や追撃を行います。
+ * 
+ * <counter_crash>
+ * このタグが反撃、連動タグと同時に使われた際、反応元のアクションをキャンセルして（発動させない）反撃や追撃を行います。
  * 
  * ※サポートが打ち切られておりますが、一応Yanfly氏のBattleSysCTBで動くように作っております
  */
@@ -90,7 +93,7 @@ BattleManager.startAction = function() {
     var subject = this._subject;
     subject._lastActionLS =  subject.currentAction();
     BattleManager_startAction_kzk.call(this);
-    this.prevTargets = [];
+    this.prevTargets = [];   
 };
 
 var BattleManager_updateAction = BattleManager.updateAction;
@@ -126,12 +129,14 @@ BattleManager.endAction = function() {
     this.exActionList = [];
   }
   
+  //Chain
   var linkedAction = BattleManager.generateLinkedAction();
   if (linkedAction)
   {
     this.exActionList.unshift(linkedAction);
   }
 
+  //Counter
   for(var i = 0; i < this.prevTargets.length; i++)
   {
     var counterlist = this.prevTargets[i].calcSkillCounter(this._subject._lastActionLS);
@@ -164,6 +169,7 @@ BattleManager.endAction = function() {
   }
 };
 
+
 //----------------------------------------Links----------------------------------------
 BattleManager.generateLinkedAction = function() {
   var subject = this._subject;
@@ -184,11 +190,19 @@ BattleManager.generateLinkedAction = function() {
   if (nextaction.item().meta.counteronevade && !someoneEvade) {return null;}
   if (nextaction.item().meta.counteroncrit && !someoneCrit) {return null;}
 
-  if (!nextaction || !(nextaction.item())) return;
-  var nextId = nextaction.item().meta.linkskill;
+  if (!nextaction || !(nextaction.item())) return null;
+  
+  var linkC = nextaction.item().meta.linkskill.split(",");
+  if (linkC.length < 2)
+  {
+    return null;
+  }
+  var nextId = linkC[1];
+  var nextProb = linkC[0];
+  
   nextaction.counter_ignorebind = nextaction.item().meta.counter_ignorebind;
   nextaction.counter_exaustturn = nextaction.item().meta.counter_exaustturn;
-  if (nextId)
+  if (nextId && Math.random() * 100 < nextProb)
   {
     nextaction.setSkill(nextId);
     nextaction._forcing = true;
