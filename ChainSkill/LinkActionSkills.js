@@ -65,6 +65,7 @@
  * 
  * <counter_crash>
  * このタグが反撃、連動タグと同時に使われた際、反応元のアクションをキャンセルして（発動させない）反撃や追撃を行います。
+ * 仕様上<counteronhit>/<counteronevade>/<counteroncrit>とは併用できません（結果が出る前にキャンセルしている為）
  * 
  * ※サポートが打ち切られておりますが、一応Yanfly氏のBattleSysCTBで動くように作っております
  */
@@ -91,9 +92,78 @@ Game_Action.prototype.decideRandomTargetForLink = function() {
 var BattleManager_startAction_kzk = BattleManager.startAction;
 BattleManager.startAction = function() {
     var subject = this._subject;
-    subject._lastActionLS =  subject.currentAction();
-    BattleManager_startAction_kzk.call(this);
-    this.prevTargets = [];   
+    subject._lastActionLS = subject.currentAction();
+    this.prevTargets = []; 
+    this.counterStartSection = true;
+    
+    this._targets = subject._lastActionLS.makeTargets();
+    
+    //Initialize Reactive Action Lists
+    if (!this.exActionListCrush)
+    {
+      this.exActionListCrush = [];
+    }
+    
+    //Chain
+    var linkedAction = BattleManager.generateLinkedAction();
+    if (linkedAction)
+    {
+      this.exActionListCrush.unshift(linkedAction);
+    }
+
+    //Counter
+    //console.log(this._targets)
+    for(var i = 0; i < this._targets.length; i++)
+    {
+      var counterlist = this._targets[i].calcSkillCounter(this._subject._lastActionLS, this.counterStartSection);
+      for (var j = 0; j < counterlist.length; j++)
+      {
+        this.exActionListCrush.unshift(counterlist[j]);
+      }
+    }
+    
+    //console.log(this.exActionListCrush);
+    if (this.exActionListCrush.length > 0)
+    {
+      var nextAction = this.exActionListCrush.shift();
+      this._subject = nextAction.subject();
+      if (this._subject && (this._subject.canMove() || nextAction.counter_ignorebind))
+      {
+        //取り消し
+        this._logWindow.counterInterrupt(subject, this._subject,subject._lastActionLS,nextAction);
+        subject._actions.shift();
+        this._subject._actions.unshift(nextAction);
+        if(this.isCTB && this.isCTB()) 
+        {
+          this._subject.kzkCounter = !nextAction.counter_exaustturn;
+          this.startCTBAction(this._subject);          
+        }
+        else
+        {
+            BattleManager.startAction();
+            this._subject.removeCurrentAction();
+        }
+      }
+    }
+    else
+    {
+      BattleManager_startAction_kzk.call(this);
+    }  
+};
+
+Window_BattleLog.prototype.counterInterrupt = function(origSubj, newSubj, oldAction, newAction) {
+    if (origSubj != newSubj)
+    {
+      this.push('addText', newSubj.name() + 'が' + origSubj.name() + 'の' + oldAction.item().name + 'に割り込み!');
+    }
+    else
+    {
+      this.push('addText', origSubj.name() + 'の' + oldAction.item().name + 'が' + oldAction.item().name + 'に変化した!');
+    }
+};
+
+Window_BattleLog.prototype.counterNormal = function() {
+    this.push('addText', '連鎖発動！');
 };
 
 var BattleManager_updateAction = BattleManager.updateAction;
@@ -122,13 +192,14 @@ Game_Enemy.prototype.index = function() {
 var BattleManager_endAction_kzk = BattleManager.endAction;
 BattleManager.endAction = function() {
   BattleManager_endAction_kzk.call(this);
-
+  this.counterStartSection = false;
+  
   //Initialize Reactive Action Lists
   if (!this.exActionList)
   {
     this.exActionList = [];
   }
-  
+
   //Chain
   var linkedAction = BattleManager.generateLinkedAction();
   if (linkedAction)
@@ -139,7 +210,7 @@ BattleManager.endAction = function() {
   //Counter
   for(var i = 0; i < this.prevTargets.length; i++)
   {
-    var counterlist = this.prevTargets[i].calcSkillCounter(this._subject._lastActionLS);
+    var counterlist = this.prevTargets[i].calcSkillCounter(this._subject._lastActionLS, this.counterStartSection);
     for (var j = 0; j < counterlist.length; j++)
     {
       this.exActionList.unshift(counterlist[j]);
@@ -152,6 +223,7 @@ BattleManager.endAction = function() {
     this._subject = nextAction.subject();
     if (this._subject && (this._subject.canMove() || nextAction.counter_ignorebind))
     {
+      this._logWindow.counterNormal();
       this._subject._actions.unshift(nextAction);
       if(this.isCTB && this.isCTB()) 
       {
@@ -174,7 +246,6 @@ BattleManager.endAction = function() {
 BattleManager.generateLinkedAction = function() {
   var subject = this._subject;
   var nextaction = JsonEx.makeDeepCopy(subject._lastActionLS);
-  
   var someoneHit = false;
   var someoneEvade = false;
   var someoneCrit = false;
@@ -185,13 +256,16 @@ BattleManager.generateLinkedAction = function() {
     if (!singleResult.isHit()) {someoneEvade = true;}
     if (!singleResult.critical) {someoneCrit = true;}
   }
-  
   if (nextaction.item().meta.counteronhit && !someoneHit) {return null;}
   if (nextaction.item().meta.counteronevade && !someoneEvade) {return null;}
   if (nextaction.item().meta.counteroncrit && !someoneCrit) {return null;}
 
-  if (!nextaction || !(nextaction.item())) return null;
-  
+  if (!nextaction || !(nextaction.item()) || !nextaction.item().meta.linkskill) return null;
+  if (!((nextaction.item().meta.counter_crash && this.counterStartSection) || 
+    (!nextaction.item().meta.counter_crash && !this.counterStartSection)))
+  {
+    return null;
+  }
   var linkC = nextaction.item().meta.linkskill.split(",");
   if (linkC.length < 2)
   {
@@ -263,7 +337,7 @@ BattleManager.counterRateElement = function(action, target) {
 };
 
 
-Game_BattlerBase.prototype.calcSkillCounter = function(action) {
+Game_BattlerBase.prototype.calcSkillCounter = function(action, counterStartSection) {
     if (!action)
     { 
        return 0;
@@ -275,12 +349,20 @@ Game_BattlerBase.prototype.calcSkillCounter = function(action) {
     
     //Yanfly_ElementCore対応
     var extraElements = action.checkElementkzk();
-    
+
     for (var i = 0; i < this.states().length; i++) {
       var state = this.states()[i];
-      
       if (state && state.meta.elementcounter) {
-      
+      console.log("---");
+        console.log(state.meta.counter_crash);
+        console.log(counterStartSection);
+        console.log("---");
+        if (!((state.meta.counter_crash && counterStartSection) || 
+          (!state.meta.counter_crash && !counterStartSection)))
+        {
+          continue;
+        }
+        
         var result = this.result();
         if (state.meta.counteronhit && !result.isHit()) {continue;}
         if (state.meta.counteronevade && result.isHit()) {continue;}
