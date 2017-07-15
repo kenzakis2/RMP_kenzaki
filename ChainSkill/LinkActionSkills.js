@@ -45,13 +45,23 @@
  * [属性ID]の属性の攻撃を受けた際、[カウンター確率]の確率で,[反撃用スキルID]を発動します。
  *　YEP_ElementCoreによる複数属性対応。
  *
+ * 共通（追加タグ）
  * <counter_exaustturn>
- * このタグがelementcounterと同時に使われた際、 反撃は追加した1行動として扱われ、 
+ * このタグが反撃、連動タグと同時に使われた際、追加攻撃は追加した1行動として扱われ、 
  * CTBの行動ゲージがリセットされるとともに「行動終了時に持続時間が変動する」ステートの持続時間を実際に1行動分、動かします。 
  *
  * <counter_ignorebind>
- * このタグがelementcounterと同時に使われた際、 例え行動不能のステートを受けていても
- * 強制的に反撃します。
+ * このタグが反撃、連動タグと同時に使われた際、例え行動不能のステートを受けていても
+ * 強制的に行動します。
+ * 
+ * <counteronhit>
+ * このタグが反撃、連動タグと同時に使われた際、反応元のアクションが命中した場合のみ反撃や追撃を行います。
+ * 
+ * <counteronevade>
+ * このタグが反撃、連動タグと同時に使われた際、反応元のアクションが回避された場合のみ反撃や追撃を行います。
+ * 
+ * <counteroncrit>
+ * このタグが反撃、連動タグと同時に使われた際、反応元のアクションがクリティカルした場合のみ反撃や追撃を行います。
  * 
  * ※サポートが打ち切られておりますが、一応Yanfly氏のBattleSysCTBで動くように作っております
  */
@@ -80,7 +90,30 @@ BattleManager.startAction = function() {
     var subject = this._subject;
     subject._lastActionLS =  subject.currentAction();
     BattleManager_startAction_kzk.call(this);
-    this.prevTargets = [].concat(this._targets);
+    this.prevTargets = [];
+};
+
+var BattleManager_updateAction = BattleManager.updateAction;
+BattleManager.updateAction = function() {
+    var target = this._targets[0];
+    BattleManager_updateAction.call(this);
+    if (target && !target.isDead())
+    {
+      var newTarget = JsonEx.makeDeepCopy(target);
+      if (target.isEnemy())
+      {
+        newTarget.backupIndex = target.index();
+      }
+      this.prevTargets.push(newTarget);      
+    }
+};
+
+var Game_Enemy_prototype_index = Game_Enemy.prototype.index;
+Game_Enemy.prototype.index = function() {
+    var index_of = Game_Enemy_prototype_index.call(this);
+    if (index_of > -1) {return index_of;}
+    if (this.backupIndex === 0 || this.backupIndex){return this.backupIndex;}
+    return -1;
 };
 
 var BattleManager_endAction_kzk = BattleManager.endAction;
@@ -107,7 +140,7 @@ BattleManager.endAction = function() {
       this.exActionList.unshift(counterlist[j]);
     }
   }
-  //console.log(this.exActionList);
+  
   if (this.exActionList.length > 0)
   {
     var nextAction = this.exActionList.shift();
@@ -135,10 +168,26 @@ BattleManager.endAction = function() {
 BattleManager.generateLinkedAction = function() {
   var subject = this._subject;
   var nextaction = JsonEx.makeDeepCopy(subject._lastActionLS);
+  
+  var someoneHit = false;
+  var someoneEvade = false;
+  var someoneCrit = false;
+  for(var i = 0; i < this.prevTargets.length; i++)
+  {
+    var singleResult = this.prevTargets[i].result();
+    if (singleResult.isHit()) {someoneHit = true;}
+    if (!singleResult.isHit()) {someoneEvade = true;}
+    if (!singleResult.critical) {someoneCrit = true;}
+  }
+  
+  if (nextaction.item().meta.counteronhit && !someoneHit) {return null;}
+  if (nextaction.item().meta.counteronevade && !someoneEvade) {return null;}
+  if (nextaction.item().meta.counteroncrit && !someoneCrit) {return null;}
 
   if (!nextaction || !(nextaction.item())) return;
   var nextId = nextaction.item().meta.linkskill;
-     
+  nextaction.counter_ignorebind = nextaction.item().meta.counter_ignorebind;
+  nextaction.counter_exaustturn = nextaction.item().meta.counter_exaustturn;
   if (nextId)
   {
     nextaction.setSkill(nextId);
@@ -217,6 +266,11 @@ Game_BattlerBase.prototype.calcSkillCounter = function(action) {
       var state = this.states()[i];
       
       if (state && state.meta.elementcounter) {
+      
+        var result = this.result();
+        if (state.meta.counteronhit && !result.isHit()) {continue;}
+        if (state.meta.counteronevade && result.isHit()) {continue;}
+        if (state.meta.counteroncrit && !result.critical) {continue;}
         var elementC = state.meta.elementcounter.split(",");
 
         if (elementC.length >= 3) {
