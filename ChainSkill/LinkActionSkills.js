@@ -6,6 +6,22 @@
  * @plugindesc Enable Reactions to skill usage such as chaining and counter with another skill
  * @author Souji Kenzaki
  *
+ * @param InteruptEnemyText
+ * @desc 敵の行動をクラッシュカウンターでキャンセルした際のテキスト。(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2が%1の%3に割り込み!
+ *
+ * @param InteruptSelfText
+ * @desc 自身の行動がクラッシュカウンターで変化した際のテキスト。(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2の%3が%4に変化した!
+ *
+ * @param CounterEnemyText
+ * @desc 敵の行動に反撃する際のテキスト(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2が%1の%3に%4で反撃！
+ *
+ * @param CounterSelfText
+ * @desc 自身のの行動に連鎖する際のテキスト(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2は続いて%4を発動！
+ *
  * @help This plugin does not provide plugin commands.
  *
  * Memo Tag:
@@ -31,6 +47,22 @@
 /*:ja
  * @plugindesc スキルへの反応関連（連鎖、反撃）
  * @author 剣崎宗二
+ *
+ * @param InteruptEnemyText
+ * @desc 敵の行動をクラッシュカウンターでキャンセルした際のテキスト。(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2が%1の%3に割り込み!
+ *
+ * @param InteruptSelfText
+ * @desc 自身の行動がクラッシュカウンターで変化した際のテキスト。(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2の%3が%4に変化した!
+ *
+ * @param CounterEnemyText
+ * @desc 敵の行動に反撃する際のテキスト(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2が%1の%3に%4で反撃！
+ *
+ * @param CounterSelfText
+ * @desc 自身のの行動に連鎖する際のテキスト(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2は続いて%4を発動！
  *
  * @help このプラグインにはプラグインコマンドはありません。
  *
@@ -70,6 +102,12 @@
  * ※サポートが打ち切られておりますが、一応Yanfly氏のBattleSysCTBで動くように作っております
  */
 (function() {
+
+var parameters = PluginManager.parameters('LinkActionSkills');
+var kzktxt_EInterrupt = parameters['InteruptEnemyText'];
+var kzktxt_SInterrupt = parameters['InteruptSelfText'];
+var kzktxt_ECounter = parameters['CounterEnemyText'];
+var kzktxt_SCounter = parameters['CounterSelfText'];
 
 BattleManager.originalsubject = []; 
 
@@ -154,16 +192,23 @@ BattleManager.startAction = function() {
 Window_BattleLog.prototype.counterInterrupt = function(origSubj, newSubj, oldAction, newAction) {
     if (origSubj != newSubj)
     {
-      this.push('addText', newSubj.name() + 'が' + origSubj.name() + 'の' + oldAction.item().name + 'に割り込み!');
+      this.push('addText', kzktxt_EInterrupt.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
     }
     else
     {
-      this.push('addText', origSubj.name() + 'の' + oldAction.item().name + 'が' + oldAction.item().name + 'に変化した!');
+      this.push('addText', kzktxt_SInterrupt.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
     }
 };
 
-Window_BattleLog.prototype.counterNormal = function() {
-    this.push('addText', '連鎖発動！');
+Window_BattleLog.prototype.counterNormal = function(origSubj, newSubj, oldAction, newAction) {
+    if (origSubj != newSubj)
+    {
+      this.push('addText', kzktxt_ECounter.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+    }
+    else
+    {
+      this.push('addText', kzktxt_SCounter.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+    }
 };
 
 var BattleManager_updateAction = BattleManager.updateAction;
@@ -219,11 +264,12 @@ BattleManager.endAction = function() {
   
   if (this.exActionList.length > 0)
   {
+    var origSubject = this._subject;
     var nextAction = this.exActionList.shift();
     this._subject = nextAction.subject();
     if (this._subject && (this._subject.canMove() || nextAction.counter_ignorebind))
     {
-      this._logWindow.counterNormal();
+      this._logWindow.counterNormal(origSubject, this._subject,origSubject._lastActionLS,nextAction);
       this._subject._actions.unshift(nextAction);
       if(this.isCTB && this.isCTB()) 
       {
@@ -276,11 +322,11 @@ BattleManager.generateLinkedAction = function() {
   
   nextaction.counter_ignorebind = nextaction.item().meta.counter_ignorebind;
   nextaction.counter_exaustturn = nextaction.item().meta.counter_exaustturn;
+  
   if (nextId && Math.random() * 100 < nextProb)
   {
     nextaction.setSkill(nextId);
     nextaction._forcing = true;
-    
     //Set target
     if (nextaction.needsSelection())
     {
@@ -353,10 +399,6 @@ Game_BattlerBase.prototype.calcSkillCounter = function(action, counterStartSecti
     for (var i = 0; i < this.states().length; i++) {
       var state = this.states()[i];
       if (state && state.meta.elementcounter) {
-      console.log("---");
-        console.log(state.meta.counter_crash);
-        console.log(counterStartSection);
-        console.log("---");
         if (!((state.meta.counter_crash && counterStartSection) || 
           (!state.meta.counter_crash && !counterStartSection)))
         {
