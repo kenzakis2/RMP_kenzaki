@@ -192,22 +192,34 @@ BattleManager.startAction = function() {
 Window_BattleLog.prototype.counterInterrupt = function(origSubj, newSubj, oldAction, newAction) {
     if (origSubj != newSubj)
     {
-      this.push('addText', kzktxt_EInterrupt.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      if (kzktxt_EInterrupt)
+      {
+        this.push('addText', kzktxt_EInterrupt.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      }
     }
     else
     {
-      this.push('addText', kzktxt_SInterrupt.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      if (kzktxt_SInterrupt)
+      {
+        this.push('addText', kzktxt_SInterrupt.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      }
     }
 };
 
 Window_BattleLog.prototype.counterNormal = function(origSubj, newSubj, oldAction, newAction) {
     if (origSubj != newSubj)
     {
-      this.push('addText', kzktxt_ECounter.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      if (kzktxt_ECounter)
+      {
+        this.push('addText', kzktxt_ECounter.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      }
     }
     else
     {
-      this.push('addText', kzktxt_SCounter.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      if (kzktxt_SCounter)
+      {
+        this.push('addText', kzktxt_SCounter.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      }
     }
 };
 
