@@ -6,6 +6,22 @@
  * @plugindesc Enable Reactions to skill usage such as chaining and counter with another skill
  * @author Souji Kenzaki
  *
+ * @param InteruptEnemyText
+ * @desc 敵の行動をクラッシュカウンターでキャンセルした際のテキスト。(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2が%1の%3に割り込み!
+ *
+ * @param InteruptSelfText
+ * @desc 自身の行動がクラッシュカウンターで変化した際のテキスト。(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2の%3が%4に変化した!
+ *
+ * @param CounterEnemyText
+ * @desc 敵の行動に反撃する際のテキスト(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2が%1の%3に%4で反撃！
+ *
+ * @param CounterSelfText
+ * @desc 自身のの行動に連鎖する際のテキスト(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2は続いて%4を発動！
+ *
  * @help This plugin does not provide plugin commands.
  *
  * Memo Tag:
@@ -32,10 +48,26 @@
  * @plugindesc スキルへの反応関連（連鎖、反撃）
  * @author 剣崎宗二
  *
+ * @param InteruptEnemyText
+ * @desc 敵の行動をクラッシュカウンターでキャンセルした際のテキスト。(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2が%1の%3に割り込み!
+ *
+ * @param InteruptSelfText
+ * @desc 自身の行動がクラッシュカウンターで変化した際のテキスト。(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2の%3が%4に変化した!
+ *
+ * @param CounterEnemyText
+ * @desc 敵の行動に反撃する際のテキスト(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2が%1の%3に%4で反撃！
+ *
+ * @param CounterSelfText
+ * @desc 自身のの行動に連鎖する際のテキスト(%1=元の行動者名 %2=カウンター実行者名 %3=元の行動名 %4=新しい行動名) 
+ * @default %2は続いて%4を発動！
+ *
  * @help このプラグインにはプラグインコマンドはありません。
  *
  * スキルメモ欄用
- * <linkskill:[連動スキルID]>
+ * <linkskill:[連鎖確率（%）],[連動スキルID]>
  * このスキルの発動直後、[連動スキルID]で指定されたスキルが更に発動します。
  * ※更に発動するスキルのターゲットが選択可能な場合ターゲットが両方敵単体、或いは両方味方単体だった場合同じターゲットへ。そうでない場合はランダムにターゲットを選択します。
  * 他の場合は敵全体など、技自体の設定が優先されます。
@@ -63,9 +95,19 @@
  * <counteroncrit>
  * このタグが反撃、連動タグと同時に使われた際、反応元のアクションがクリティカルした場合のみ反撃や追撃を行います。
  * 
+ * <counter_crash>
+ * このタグが反撃、連動タグと同時に使われた際、反応元のアクションをキャンセルして（発動させない）反撃や追撃を行います。
+ * 仕様上<counteronhit>/<counteronevade>/<counteroncrit>とは併用できません（結果が出る前にキャンセルしている為）
+ * 
  * ※サポートが打ち切られておりますが、一応Yanfly氏のBattleSysCTBで動くように作っております
  */
 (function() {
+
+var parameters = PluginManager.parameters('LinkActionSkills');
+var kzktxt_EInterrupt = parameters['InteruptEnemyText'];
+var kzktxt_SInterrupt = parameters['InteruptSelfText'];
+var kzktxt_ECounter = parameters['CounterEnemyText'];
+var kzktxt_SCounter = parameters['CounterSelfText'];
 
 BattleManager.originalsubject = []; 
 
@@ -88,9 +130,97 @@ Game_Action.prototype.decideRandomTargetForLink = function() {
 var BattleManager_startAction_kzk = BattleManager.startAction;
 BattleManager.startAction = function() {
     var subject = this._subject;
-    subject._lastActionLS =  subject.currentAction();
-    BattleManager_startAction_kzk.call(this);
-    this.prevTargets = [];
+    subject._lastActionLS = subject.currentAction();
+    this.prevTargets = []; 
+    this.counterStartSection = true;
+    
+    this._targets = subject._lastActionLS.makeTargets();
+    
+    //Initialize Reactive Action Lists
+    if (!this.exActionListCrush)
+    {
+      this.exActionListCrush = [];
+    }
+    
+    //Chain
+    var linkedAction = BattleManager.generateLinkedAction();
+    if (linkedAction)
+    {
+      this.exActionListCrush.unshift(linkedAction);
+    }
+
+    //Counter
+    //console.log(this._targets)
+    for(var i = 0; i < this._targets.length; i++)
+    {
+      var counterlist = this._targets[i].calcSkillCounter(this._subject._lastActionLS, this.counterStartSection);
+      for (var j = 0; j < counterlist.length; j++)
+      {
+        this.exActionListCrush.unshift(counterlist[j]);
+      }
+    }
+    
+    //console.log(this.exActionListCrush);
+    if (this.exActionListCrush.length > 0)
+    {
+      var nextAction = this.exActionListCrush.shift();
+      this._subject = nextAction.subject();
+      if (this._subject && (this._subject.canMove() || nextAction.counter_ignorebind))
+      {
+        //取り消し
+        this._logWindow.counterInterrupt(subject, this._subject,subject._lastActionLS,nextAction);
+        subject._actions.shift();
+        this._subject._actions.unshift(nextAction);
+        if(this.isCTB && this.isCTB()) 
+        {
+          this._subject.kzkCounter = !nextAction.counter_exaustturn;
+          this.startCTBAction(this._subject);          
+        }
+        else
+        {
+            BattleManager.startAction();
+            this._subject.removeCurrentAction();
+        }
+      }
+    }
+    else
+    {
+      BattleManager_startAction_kzk.call(this);
+    }  
+};
+
+Window_BattleLog.prototype.counterInterrupt = function(origSubj, newSubj, oldAction, newAction) {
+    if (origSubj != newSubj)
+    {
+      if (kzktxt_EInterrupt)
+      {
+        this.push('addText', kzktxt_EInterrupt.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      }
+    }
+    else
+    {
+      if (kzktxt_SInterrupt)
+      {
+        this.push('addText', kzktxt_SInterrupt.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      }
+    }
+};
+
+Window_BattleLog.prototype.counterNormal = function(origSubj, newSubj, oldAction, newAction) {
+    if (origSubj != newSubj)
+    {
+      if (kzktxt_ECounter)
+      {
+        this.push('addText', kzktxt_ECounter.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      }
+    }
+    else
+    {
+      if (kzktxt_SCounter)
+      {
+        this.push('addText', kzktxt_SCounter.format(origSubj.name(), newSubj.name(), oldAction.item().name, newAction.item().name));
+      }
+    }
 };
 
 var BattleManager_updateAction = BattleManager.updateAction;
@@ -119,22 +249,25 @@ Game_Enemy.prototype.index = function() {
 var BattleManager_endAction_kzk = BattleManager.endAction;
 BattleManager.endAction = function() {
   BattleManager_endAction_kzk.call(this);
-
+  this.counterStartSection = false;
+  
   //Initialize Reactive Action Lists
   if (!this.exActionList)
   {
     this.exActionList = [];
   }
-  
+
+  //Chain
   var linkedAction = BattleManager.generateLinkedAction();
   if (linkedAction)
   {
     this.exActionList.unshift(linkedAction);
   }
 
+  //Counter
   for(var i = 0; i < this.prevTargets.length; i++)
   {
-    var counterlist = this.prevTargets[i].calcSkillCounter(this._subject._lastActionLS);
+    var counterlist = this.prevTargets[i].calcSkillCounter(this._subject._lastActionLS, this.counterStartSection);
     for (var j = 0; j < counterlist.length; j++)
     {
       this.exActionList.unshift(counterlist[j]);
@@ -143,10 +276,12 @@ BattleManager.endAction = function() {
   
   if (this.exActionList.length > 0)
   {
+    var origSubject = this._subject;
     var nextAction = this.exActionList.shift();
     this._subject = nextAction.subject();
     if (this._subject && (this._subject.canMove() || nextAction.counter_ignorebind))
     {
+      this._logWindow.counterNormal(origSubject, this._subject,origSubject._lastActionLS,nextAction);
       this._subject._actions.unshift(nextAction);
       if(this.isCTB && this.isCTB()) 
       {
@@ -164,11 +299,11 @@ BattleManager.endAction = function() {
   }
 };
 
+
 //----------------------------------------Links----------------------------------------
 BattleManager.generateLinkedAction = function() {
   var subject = this._subject;
   var nextaction = JsonEx.makeDeepCopy(subject._lastActionLS);
-  
   var someoneHit = false;
   var someoneEvade = false;
   var someoneCrit = false;
@@ -179,20 +314,31 @@ BattleManager.generateLinkedAction = function() {
     if (!singleResult.isHit()) {someoneEvade = true;}
     if (!singleResult.critical) {someoneCrit = true;}
   }
-  
   if (nextaction.item().meta.counteronhit && !someoneHit) {return null;}
   if (nextaction.item().meta.counteronevade && !someoneEvade) {return null;}
   if (nextaction.item().meta.counteroncrit && !someoneCrit) {return null;}
 
-  if (!nextaction || !(nextaction.item())) return;
-  var nextId = nextaction.item().meta.linkskill;
+  if (!nextaction || !(nextaction.item()) || !nextaction.item().meta.linkskill) return null;
+  if (!((nextaction.item().meta.counter_crash && this.counterStartSection) || 
+    (!nextaction.item().meta.counter_crash && !this.counterStartSection)))
+  {
+    return null;
+  }
+  var linkC = nextaction.item().meta.linkskill.split(",");
+  if (linkC.length < 2)
+  {
+    return null;
+  }
+  var nextId = linkC[1];
+  var nextProb = linkC[0];
+  
   nextaction.counter_ignorebind = nextaction.item().meta.counter_ignorebind;
   nextaction.counter_exaustturn = nextaction.item().meta.counter_exaustturn;
-  if (nextId)
+  
+  if (nextId && Math.random() * 100 < nextProb)
   {
     nextaction.setSkill(nextId);
     nextaction._forcing = true;
-    
     //Set target
     if (nextaction.needsSelection())
     {
@@ -249,7 +395,7 @@ BattleManager.counterRateElement = function(action, target) {
 };
 
 
-Game_BattlerBase.prototype.calcSkillCounter = function(action) {
+Game_BattlerBase.prototype.calcSkillCounter = function(action, counterStartSection) {
     if (!action)
     { 
        return 0;
@@ -261,12 +407,16 @@ Game_BattlerBase.prototype.calcSkillCounter = function(action) {
     
     //Yanfly_ElementCore対応
     var extraElements = action.checkElementkzk();
-    
+
     for (var i = 0; i < this.states().length; i++) {
       var state = this.states()[i];
-      
       if (state && state.meta.elementcounter) {
-      
+        if (!((state.meta.counter_crash && counterStartSection) || 
+          (!state.meta.counter_crash && !counterStartSection)))
+        {
+          continue;
+        }
+        
         var result = this.result();
         if (state.meta.counteronhit && !result.isHit()) {continue;}
         if (state.meta.counteronevade && result.isHit()) {continue;}
