@@ -1,4 +1,4 @@
-//=============================================================================
+﻿//=============================================================================
 // MultiStackState.js
 //=============================================================================
 
@@ -68,6 +68,18 @@ Game_Battler.prototype.removeState = function(stateId) {
         if (lastCount == this.countState(stateId)) {break;}
     }
 };
+
+var kzk_Game_BattlerBase_prototype_updateStateTurns = Game_BattlerBase.prototype.updateStateTurns;
+Game_BattlerBase.prototype.updateStateTurns = function() {
+    var stateOriginal = this._states;
+    this._states = stateOriginal.filter(function (x, i, self) {
+       return self.indexOf(x) === i;
+    });
+    kzk_Game_BattlerBase_prototype_updateStateTurns.call(this);
+    this._states = stateOriginal;
+    console.log(this._stateTurns);
+};
+
 
 })();
 
