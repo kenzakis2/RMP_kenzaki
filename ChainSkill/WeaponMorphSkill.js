@@ -37,9 +37,12 @@
  * <unequip_w>
  * このスキルが発動した「後」、装備している武器が解除され、アイテム欄に戻ります。
  * 
+ * <revert_endb>
+ * change_equipへの機能追加。このタグがあると、このスキルで変化された武器は戦闘終了時に元に戻ります。
+ * プラグイン仕様上、戦闘中に装備を変更できるプラグインとは相性が悪いです。そのようなプラグインを運用する際はこのタグを付与しないようにしてください。
+ * 
  * 尚、上記二つのタグを同時に使用した場合、<unequip_w>が先に発動します。
  * つまり、現在装備している武器を解除してアイテム欄に戻した上で、新たにアイテムを生成し、装備する…と言う形になります。
- * 尚、プラグイン仕様上、戦闘中に装備を変更できるプラグインとは相性が悪いです。ご注意ください。
  */
 
 (function() {
@@ -51,6 +54,7 @@
       subject.tempWeapon = weaponChange;
     }
     subject.unequipWeapon = subject.currentAction().item().meta.unequip_w;
+    subject.revertEndOfBattle = subject.currentAction().item().meta.revert_endb;
     BattleManager_startAction_kzk_weapon.call(this);
   };
 
@@ -66,7 +70,7 @@
       }
       if (subject.tempWeapon)
       {
-         if (!subject.origWeapon && !subject.unequipWeapon)
+         if (!subject.origWeapon && subject.revertEndOfBattle)
          {
             subject.origWeapon = subject.equips()[0];
          }
@@ -94,6 +98,8 @@
            chara.forceChangeEquip(0, chara.origWeapon);
            chara.origWeapon = "";
         }
+        subject.unequipWeapon = false;
+        subject.revertEndOfBattle = false;
       });
   };
 })();
