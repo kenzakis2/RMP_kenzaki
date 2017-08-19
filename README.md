@@ -43,6 +43,9 @@ ChainSkill/
 
 スキル連鎖、及び属性へのスキルでの反撃を可能にする。旧「LinkSkill」「CounterAfterAtk」の統合版。
 
+→WeaponMorphSkill
+
+スキルを使用した際に、装備している武器を変化、消滅、または装備解除する。
 
 →WeaponChainSkill
 
