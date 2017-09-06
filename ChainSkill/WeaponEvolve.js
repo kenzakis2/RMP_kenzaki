@@ -98,7 +98,7 @@
                {
                   var targetItem = currentListItem.targetItemId >= 0 ? $dataWeapons[currentListItem.targetItemId] : null;
                   this._logWindow.weaponMorphMsg(equipList[j], targetItem)
-                  subject.forceChangeEquip(j, targetItem);
+                  subject.forceChangeEquipNoVanish(j, targetItem);
                }
             }
          }
@@ -120,6 +120,11 @@
     }
   }
 
+  Game_Actor.prototype.forceChangeEquipNoVanish = function(slotId, item) {
+      this._equips[slotId].setObject(item);
+      this.releaseUnequippableItems(false);
+      this.refresh();
+  };
 
   
 })();

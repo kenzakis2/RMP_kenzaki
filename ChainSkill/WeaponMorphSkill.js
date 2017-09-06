@@ -1,4 +1,4 @@
-/*:
+﻿/*:
  * @plugindesc Skill which unequip/Morph the weapon of the user
  * @author Souji Kenzaki
  *
@@ -78,7 +78,7 @@
          {
             tempWeaponItem = $dataWeapons[subject.tempWeapon];
          }
-         subject.forceChangeEquip(0, tempWeaponItem)
+         subject.forceChangeEquipNoVanish(0, tempWeaponItem)
          subject.unequipWeapon = false;
       }
       BattleManager_endAction_kzk_weapon.call(this);
@@ -95,14 +95,22 @@
       $gameParty.members().forEach(function(chara){
         if (chara.origWeapon)
         {
-           chara.forceChangeEquip(0, chara.origWeapon);
+           chara.forceChangeEquipNoVanish(0, chara.origWeapon);
            chara.origWeapon = "";
         }
         subject.unequipWeapon = false;
         subject.revertEndOfBattle = false;
       });
   };
+
+  Game_Actor.prototype.forceChangeEquipNoVanish = function(slotId, item) {
+      this._equips[slotId].setObject(item);
+      this.releaseUnequippableItems(false);
+      this.refresh();
+  };
 })();
+
+
 
 
 
