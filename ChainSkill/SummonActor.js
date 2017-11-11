@@ -68,8 +68,8 @@
                     target.addState(stateId);
                 }
                 target.appear();
-                //target.hide();
                 SceneManager._scene._spriteset.addLastActorSprite();
+                var targetSprite = SceneManager._scene._spriteset.findSpriteFromBattler(target);
                 target.startAppearAnime();
                 this.lastSummonResult = 2;
             }
@@ -176,7 +176,7 @@
         var spriteset = SceneManager._scene._spriteset;
         $gameParty.allMembers().forEach(function(actor) {
             var sprite = spriteset.findSpriteFromBattler(actor);
-            if (!sprite.isAnimationPlaying())
+            if (!sprite.isAnimationPlaying() && !actor.isAnimationRequested())
             {
                 if (actor._removeAfterAnime)
                 {
@@ -186,10 +186,14 @@
 
                 if (actor._appearAfterAnime)
                 {
-                    actor.appear();
+                    sprite.opacity = 255;
                     actor._appearAfterAnime = false;
                     return;
                 }
+            }
+            else if(actor._appearAfterAnime)
+            {
+                sprite.opacity = 0;
             }
         });
 
