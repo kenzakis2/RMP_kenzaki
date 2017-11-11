@@ -173,8 +173,10 @@
 
     var kz_BattleManager_update = BattleManager.update;
     BattleManager.update = function() {
+        var spriteset = SceneManager._scene._spriteset;
         $gameParty.allMembers().forEach(function(actor) {
-            if (!actor.isAnimationRequested())
+            var sprite = spriteset.findSpriteFromBattler(actor);
+            if (!sprite.isAnimationPlaying())
             {
                 if (actor._removeAfterAnime)
                 {
@@ -224,6 +226,8 @@
 
     Spriteset_Battle.prototype.removeLastActorSprite = function(targetActor) {
         var targetActorSprite = this.findSpriteFromBattler(targetActor);
+        var num = this._actorSprites.indexOf(targetActorSprite);
+        this._actorSprites.splice(num, 1);
         this._battleField.removeChild(targetActorSprite);
     };
 
