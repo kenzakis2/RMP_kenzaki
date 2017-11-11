@@ -227,7 +227,7 @@
         this._battleField.removeChild(targetActorSprite);
     };
 
-    Spriteset_Battle.prototype.findSpriteFromBattler(battler);
+    Spriteset_Battle.prototype.findSpriteFromBattler = function(battler)
     {
         var targetSet = battler.isActor() ? this._actorSprites : this._enemySprites;
         targetSet.forEach(function(sprite)
