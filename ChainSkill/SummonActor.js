@@ -230,14 +230,15 @@
     Spriteset_Battle.prototype.findSpriteFromBattler = function(battler)
     {
         var targetSet = battler.isActor() ? this._actorSprites : this._enemySprites;
+        var result = null;
         targetSet.forEach(function(sprite)
         {
             if (sprite._battler == battler)
             {
-                return sprite;
+                result = sprite;
             }
         });
-        return null;
+        return result;
     }
 
     var kz_Sprite_Actor_prototype_startEntryMotion = Sprite_Actor.prototype.startEntryMotion;
