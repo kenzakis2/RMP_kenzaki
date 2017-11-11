@@ -81,7 +81,7 @@
         var target = $gameActors.actor(actorId);
         if (target && this._actors.contains(actorId))
         {
-            SceneManager._scene._spriteset.removeLastActorSprite();
+            SceneManager._scene._spriteset.removeLastActorSprite(target);
             this.removeActor(actorId)
             if (target._summoned)
             {
@@ -222,10 +222,23 @@
         this._battleField.addChild(newActorSprite);
     };
 
-    Spriteset_Battle.prototype.removeLastActorSprite = function() {
-        var targetActorSprite = this._actorSprites.pop();
+    Spriteset_Battle.prototype.removeLastActorSprite = function(targetActor) {
+        var targetActorSprite = this.findSpriteFromBattler(targetActor);
         this._battleField.removeChild(targetActorSprite);
     };
+
+    Spriteset_Battle.prototype.findSpriteFromBattler(battler);
+    {
+        var targetSet = battler.isActor() ? this._actorSprites : this._enemySprites;
+        targetSet.forEach(function(sprite)
+        {
+            if (sprite._battler == battler)
+            {
+                return sprite;
+            }
+        });
+        return null;
+    }
 
     var kz_Sprite_Actor_prototype_startEntryMotion = Sprite_Actor.prototype.startEntryMotion;
     Sprite_Actor.prototype.startEntryMotion = function() {
