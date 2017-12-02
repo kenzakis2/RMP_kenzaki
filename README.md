@@ -33,15 +33,13 @@ ChainSkill/
 
 （ビービーエンターテイメント様 @BB_ENTER の依頼で改修した物を、許可を頂いて掲載しております）
 
-
-→CounterAfterAtk.js
-
-特定の属性の攻撃を受けた際、設定された確率で特定のスキルを発動し反撃する。
-
-
 →LinkActionSkill.js
 
 スキル連鎖、及び属性へのスキルでの反撃を可能にする。旧「LinkSkill」「CounterAfterAtk」の統合版。
+
+→SummonActor.js
+
+戦闘中に例え最大数までキャラクターを既に参加させていたとしても、特定のスキルを使う事でアクターを「召喚」し、仲間のように戦わせられる。
 
 →WeaponMorphSkill
 
@@ -74,6 +72,10 @@ Pictures/
 →FrontPictures.js
 
 ウィンドウより前面にピクチャを設置できるプラグイン。
+
+→AnimatePicture.js
+
+連番絵を動画のように再生させる事が出来、ピクチャのように扱える（移動、合成など）プラグインです。
 
 -----------------------------------
 Teleport/
