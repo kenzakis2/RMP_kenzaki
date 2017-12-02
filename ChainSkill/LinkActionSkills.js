@@ -77,6 +77,11 @@
  * [属性ID]の属性の攻撃を受けた際、[カウンター確率]の確率で,[反撃用スキルID]を発動します。
  *　YEP_ElementCoreによる複数属性対応。
  *
+ * <statecounter:[ステートID],[カウンター確率（%）],[反撃用スキルID]>    
+ * アクションによって[ステートID]の属性の攻撃を受けた際、[カウンター確率]の確率で,[反撃用スキルID]を発動します。
+ * イベント等による付与では発生しないのでご注意ください。
+ *
+ *
  * 共通（追加タグ）
  * <counter_exaustturn>
  * このタグが反撃、連動タグと同時に使われた際、追加攻撃は追加した1行動として扱われ、 
@@ -153,6 +158,7 @@ BattleManager.startAction = function() {
     //console.log(this._targets)
     for(var i = 0; i < this._targets.length; i++)
     {
+      this._targets[i]._lastAddedState = null;
       var counterlist = this._targets[i].calcSkillCounter(this._subject._lastActionLS, this.counterStartSection);
       for (var j = 0; j < counterlist.length; j++)
       {
@@ -410,7 +416,7 @@ Game_BattlerBase.prototype.calcSkillCounter = function(action, counterStartSecti
 
     for (var i = 0; i < this.states().length; i++) {
       var state = this.states()[i];
-      if (state && state.meta.elementcounter) {
+      if (state) {
         if (!((state.meta.counter_crash && counterStartSection) || 
           (!state.meta.counter_crash && !counterStartSection)))
         {
@@ -421,21 +427,42 @@ Game_BattlerBase.prototype.calcSkillCounter = function(action, counterStartSecti
         if (state.meta.counteronhit && !result.isHit()) {continue;}
         if (state.meta.counteronevade && result.isHit()) {continue;}
         if (state.meta.counteroncrit && !result.critical) {continue;}
-        var elementC = state.meta.elementcounter.split(",");
+        if (state.meta.statecounter)
+        {
+          var stateC = state.meta.statecounter.split(",");
+          if (stateC.length >= 3) {
+            var counterState = Number(stateC[0]);
+            var counterStateRate = stateC[1];
+            var counterStateSkill = Number(stateC[2]);
 
-        if (elementC.length >= 3) {
-           var counterElement = elementC[0];
-           var counterRate = elementC[1];
-           var counterSkill = elementC[2];
-           if ((extraElements.indexOf(Number(counterElement)) >= 0) && Math.random() * 100 < counterRate)
-           {
+            if (this._lastAddedState && this._lastAddedState == counterState && Math.random() * 100 < counterStateRate)
+            {
               var newaction = new Game_Action(target, true);
-              newaction.setSkill(counterSkill);
+              newaction.setSkill(counterStateSkill);
               newaction._targetIndex = subject.index();
               newaction.counter_ignorebind = state.meta.counter_ignorebind;
               newaction.counter_exaustturn = state.meta.counter_exaustturn;
               counterList.push(newaction);
-           }
+            }
+          }
+        }
+        if (state.meta.elementcounter)
+        {
+          var elementC = state.meta.elementcounter.split(",");
+          if (elementC.length >= 3) {
+            var counterElement = elementC[0];
+            var counterRate = elementC[1];
+            var counterSkill = elementC[2];
+            if ((extraElements.indexOf(Number(counterElement)) >= 0) && Math.random() * 100 < counterRate)
+            {
+                var newaction = new Game_Action(target, true);
+                newaction.setSkill(counterSkill);
+                newaction._targetIndex = subject.index();
+                newaction.counter_ignorebind = state.meta.counter_ignorebind;
+                newaction.counter_exaustturn = state.meta.counter_exaustturn;
+                counterList.push(newaction);
+            }
+          }
         }
       }
     }
@@ -460,4 +487,11 @@ Game_Action.prototype.checkElementkzk = function() {
   return elements;
 };
 
+
+//-----StateReact関連----
+var kz_Game_Battler_prototype_addState = Game_Battler.prototype.addState;
+Game_Battler.prototype.addState = function(stateId) {
+  this._lastAddedState = stateId;
+  kz_Game_Battler_prototype_addState.call(this, stateId);
+};
 })();
