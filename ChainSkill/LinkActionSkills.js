@@ -497,11 +497,10 @@ else
      if (stateId == this.deathStateId() && this.hasDeathReaction())
      {
        this._deathSentence = true;
-       this._hp = 1;
      }
      else
      {
-       kz_Game_Battler_prototype_addState.call(this, stateId);
+      kz_Game_Battler_prototype_addState.call(this, stateId);
      }
     };
   
@@ -527,13 +526,9 @@ else
   var kz_Game_BattlerBase_prototype_revive = Game_BattlerBase.prototype.revive;
   Game_BattlerBase.prototype.revive = function() {
     if (this._deathSentence) {
-      console.trace();
       this._deathSentence = false;
     }
-    else
-    {
-      kz_Game_BattlerBase_prototype_revive.call(this);
-    }
+    kz_Game_BattlerBase_prototype_revive.call(this);
   }
 
   var kz_Game_Battler_prototype_removeState = Game_Battler.prototype.removeState;
@@ -544,17 +539,17 @@ else
     kz_Game_Battler_prototype_removeState.call(this, stateId);
   };
   
-  
+  var kz_Game_Battler_prototype_refresh = Game_Battler.prototype.refresh;
+  Game_Battler.prototype.refresh = function() {
+    if (this._deathSentence)
+    {
+      Game_BattlerBase.prototype.refresh.call(this);
+    }
+    else{
+      kz_Game_Battler_prototype_refresh.call(this);
+    }
+}
   
    })();
   
-  var kz_Game_Battler_prototype_refresh = Game_Battler.prototype.refresh;
-    Game_Battler.prototype.refresh = function() {
-      if (this._deathSentence)
-      {
-        Game_BattlerBase.prototype.refresh.call(this);
-      }
-      else{
-        kz_Game_Battler_prototype_refresh.call(this);
-      }
-  }
+  
