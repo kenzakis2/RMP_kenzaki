@@ -14,10 +14,13 @@
  * @author Souji Kenzaki
  *
  * @param Base
+ * @type number
+ * @min 1
  * @desc 各クエストの状態を格納する変数群の開始番号です。たとえばこれが５００なら、クエストID１のステータスは変数５０１番に格納されます。
  * @default 500
  *
  * @param AnimationId
+ * @type animation
  * @desc テレポート時に再生されるアニメーションの番号
  * @default 10
  * 

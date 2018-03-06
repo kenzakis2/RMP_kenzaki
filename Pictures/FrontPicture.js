@@ -30,7 +30,7 @@ var parameters = PluginManager.parameters(pluginName);
                 SceneManager._scene.showPictureUpperLayer(args[1], args[2], args[3], args[4]);
                 break;
             case 'remove':
-                SceneManager._scene.showPictureUpperLayer(args[1]);
+                SceneManager._scene.removePictureUpperLayer(args[1]);
                 break;
             }
         }

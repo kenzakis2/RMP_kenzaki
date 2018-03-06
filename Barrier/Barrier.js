@@ -37,6 +37,7 @@
 * @default %1が%2のダメージを受け破壊された！
 *
 * @param Piercing
+* @type boolean
 * @desc 障壁の体力を超過したダメージが貫通するか否か。falseの場合、如何なる大技でも一発は無効化する。
 * @default true
 *
