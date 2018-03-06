@@ -247,7 +247,9 @@
   
    var BattleManager_endAction_kzk = BattleManager.endAction;
    BattleManager.endAction = function() {
+    var backupSubject = this._subject;
     BattleManager_endAction_kzk.call(this);
+    this._subject = backupSubject;
     this.counterStartSection = false;
      //Initialize Reactive Action Lists
     if (!this.exActionList)
