@@ -248,6 +248,19 @@
    var BattleManager_endAction_kzk = BattleManager.endAction;
    BattleManager.endAction = function() {
     var backupSubject = this._subject;
+    //set prevTargets again, due to YEP_BattleEngineCore Skipping the whole updateAction phase
+    this._targets.forEach(function(target) {
+      if (target && !target.isDead())
+      {
+        var newTarget = JsonEx.makeDeepCopy(target);
+        if (target.isEnemy())
+        {
+          newTarget.backupIndex = target.index();
+        }
+        this.prevTargets.push(newTarget);      
+      }
+    }, this);
+
     BattleManager_endAction_kzk.call(this);
     this._subject = backupSubject;
     this.counterStartSection = false;
