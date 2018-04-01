@@ -1,4 +1,4 @@
-//=============================================================================
+﻿//=============================================================================
 // LinkActionSkill.js
 //=============================================================================
 /*:
@@ -76,6 +76,9 @@
 *　YEP_ElementCoreによる複数属性対応。
 *
 * 共通（追加タグ）
+* <counter_exaustturn>
+* このタグが反撃、連動タグと同時に使われた際、追加攻撃は追加した1行動として扱われ、
+* CTBの行動ゲージがリセットされるとともに「行動終了時に持続時間が変動する」ステートの持続時間を実際に1行動分、動かします。
 *
 * <counter_ignorebind>
 * このタグが反撃、連動タグと同時に使われた際、例え行動不能のステートを受けていても
@@ -121,155 +124,68 @@
           this.clear();
       }
    };
-
-BattleManager.pushLinkedAction = function(list, isCrash, targets)
-   {
-        var linkedAction = BattleManager.generateLinkedAction(targets, isCrash);
-        if (linkedAction)
-        {
-            linkedAction._lastActionLS = this._subject._lastActionLS;
-            list.unshift(linkedAction);
-            return true;
-        }
-        return false;
-   }
-
-   BattleManager.pushCounterAction = function(list, isCrash, targets)
-   {
-       var counterSuccess = false;
-        for(var i = 0; i < targets.length; i++)
-        {
-            var counterlist = targets[i].calcSkillCounter(this._subject._lastActionLS, isCrash);
-            for (var j = 0; j < counterlist.length; j++)
-            {
-                counterlist[j]._lastActionLS = this._subject._lastActionLS;
-                list.unshift(counterlist[j]);
-                if (isCrash) {
-                    return true;
-                }
-                else
-                {
-                    counterSuccess = true;
-                }
-            }
-        }
-        return counterSuccess;
-   }
-
-   BattleManager.isCounterExecuted = function(list, isCrash, targets)
-   {
-       if (isCrash)
-       {
-            if (this.pushCounterAction(list, isCrash, targets)) {
-                return true;
-            }
-            return this.pushLinkedAction(list, isCrash, targets);
-       }
-       else
-       {
-           return this.pushCounterAction(list, isCrash, targets) || this.pushLinkedAction(list, isCrash, targets); 
-       }
-   }
   
-
-   var kz_BattleManager_updateEvent = BattleManager.updateEvent;
-   BattleManager.updateEvent = function() {
-       if (!this.isActionForced() && !this._processingForcedAction)
-       {
-            if (!this.exActionListCrush)
-            {
-                this.exActionListCrush = [];
-            }
-            if (!this.exActionList)
-            {
-                this.exActionList = [];
-            }
-
-            var nextAction = null;
-            if (this.exActionListCrush.length > 0)
-            {
-                nextAction = this.exActionListCrush.shift();
-                if (nextAction._lastActionLS)
-                {
-                    this._logWindow.counterInterrupt(nextAction._lastActionLS.subject(), nextAction.subject(), nextAction._lastActionLS, nextAction);
-                }
-            }
-            else if (this.exActionList.length > 0)
-            {
-                nextAction = this.exActionList.shift();
-                if (nextAction._lastActionLS)
-                {
-                    this._logWindow.counterNormal(nextAction._lastActionLS.subject(), nextAction.subject(), nextAction._lastActionLS, nextAction);
-                }
-            }
-
-            if (nextAction && (this._subject.canMove() || nextAction.counter_ignorebind))
-            {
-                var nextActionBattler = this.setBattlerFromAction(nextAction);
-                this.forceAction(nextActionBattler);
-            }
-       }
-       return kz_BattleManager_updateEvent.call(this);
-   };
-
-   BattleManager.setBattlerFromAction = function(action) {
-       var battler = action.subject();
-       battler._actions.unshift(action);
-       return battler;
-   };
-
- var BattleManager_startAction_kzk = BattleManager.startAction;
+   var BattleManager_startAction_kzk = BattleManager.startAction;
    BattleManager.startAction = function() {
       var subject = this._subject;
       subject._lastActionLS = subject.currentAction();
       this.prevTargets = [];
+      this.counterStartSection = true;
     
       this._targets = subject._lastActionLS.makeTargets();
-      for(var i = 0; i < this._targets.length; i++)
-      {
-          this._targets[i]._lastAddedState = [];
-      }
-
+    
       //Initialize Reactive Action Lists
       if (!this.exActionListCrush)
       {
-          this.exActionListCrush = [];
+        this.exActionListCrush = [];
       }
-
-      if (this.isCounterExecuted(this.exActionListCrush, true, this._targets))
+    
+      //Chain
+      var linkedAction = BattleManager.generateLinkedAction();
+      if (linkedAction)
       {
-          console.log(this.exActionListCrush);
+        this.exActionListCrush.unshift(linkedAction);
+      }
+  
+      //Counter
+      //console.log(this._targets)
+      for(var i = 0; i < this._targets.length; i++)
+      {
+        this._targets[i]._lastAddedState = [];
+        var counterlist = this._targets[i].calcSkillCounter(this._subject._lastActionLS, this.counterStartSection);
+        for (var j = 0; j < counterlist.length; j++)
+        {
+          this.exActionListCrush.unshift(counterlist[j]);
+        }
+      }
+    
+      //console.log(this.exActionListCrush);
+      if (this.exActionListCrush.length > 0)
+      {
+        var nextAction = this.exActionListCrush.shift();
+        this._subject = nextAction.subject();
+        if (this._subject && (this._subject.canMove() || nextAction.counter_ignorebind))
+        {
+          //取り消し
+          this._logWindow.counterInterrupt(subject, this._subject,subject._lastActionLS,nextAction);
           subject._actions.shift();
+          this._subject._actions.unshift(nextAction);
+          if(this.isCTB && this.isCTB())
+          {
+            this._subject.kzkCounter = !nextAction.counter_exaustturn;
+            this.startCTBAction(this._subject);        
+          }
+          else
+          {
+              BattleManager.startAction();
+              this._subject.removeCurrentAction();
+          }
+        }
       }
       else
       {
-          console.log("normal");
-          BattleManager_startAction_kzk.call(this);
+        BattleManager_startAction_kzk.call(this);
       }
-    }
-
-   var BattleManager_endAction_kzk = BattleManager.endAction;
-   BattleManager.endAction = function() {
-        var backupSubject = this._subject;
-        BattleManager_endAction_kzk.call(this);
-        this._subject = backupSubject;
-        
-        //Initialize Reactive Action Lists
-        if (!this.exActionList)
-        {
-            this.exActionList = [];
-        }
-
-        if (!this.isCounterExecuted(this.exActionList, false, this.prevTargets))
-        {
-            if (this._subject._deathSentence)
-            {
-                this._subject._deathSentence = false;
-                this._subject.clearActions();
-                this._subject.die();
-                this._subject.refresh();
-            }
-        }
    };
   
    Window_BattleLog.prototype.counterInterrupt = function(origSubj, newSubj, oldAction, newAction) {
@@ -329,18 +245,80 @@ BattleManager.pushLinkedAction = function(list, isCrash, targets)
       return -1;
    };
   
+   var BattleManager_endAction_kzk = BattleManager.endAction;
+   BattleManager.endAction = function() {
+    var backupSubject = this._subject;
+    BattleManager_endAction_kzk.call(this);
+    this._subject = backupSubject;
+    this.counterStartSection = false;
+     //Initialize Reactive Action Lists
+    if (!this.exActionList)
+    {
+      this.exActionList = [];
+    }
+  
+    //Chain
+    var linkedAction = BattleManager.generateLinkedAction();
+    if (linkedAction)
+    {
+      this.exActionList.unshift(linkedAction);
+    }
+  
+    //Counter
+    for(var i = 0; i < this.prevTargets.length; i++)
+    {
+      var counterlist = this.prevTargets[i].calcSkillCounter(this._subject._lastActionLS, this.counterStartSection);
+      for (var j = 0; j < counterlist.length; j++)
+      {
+        this.exActionList.unshift(counterlist[j]);
+      }
+    }
+     if (this.exActionList.length > 0)
+    {
+      var origSubject = this._subject;
+      var nextAction = this.exActionList.shift();
+      this._subject = nextAction.subject();
+      if (this._subject && (this._subject.canMove() || nextAction.counter_ignorebind))
+      {
+        this._logWindow.counterNormal(origSubject, this._subject,origSubject._lastActionLS,nextAction);
+        this._subject._actions.unshift(nextAction);
+        if(this.isCTB && this.isCTB())
+        {
+        
+          this._subject.kzkCounter = !nextAction.counter_exaustturn;
+          this.startCTBAction(this._subject);
+        
+        }
+        else
+        {
+            BattleManager.startAction();
+            this._subject.removeCurrentAction();
+        }
+      }
+    }
+else
+    {
+      if (this._subject._deathSentence)
+      {
+        this._subject._deathSentence = false;
+        this._subject.clearActions();
+        this._subject.die();
+        this._subject.refresh();
+      }
+    }
+   };
   
   
    //----------------------------------------Links----------------------------------------
-   BattleManager.generateLinkedAction = function(targets, counterStartSection) {
+   BattleManager.generateLinkedAction = function() {
     var subject = this._subject;
     var nextaction = JsonEx.makeDeepCopy(subject._lastActionLS);
     var someoneHit = false;
     var someoneEvade = false;
     var someoneCrit = false;
-    for(var i = 0; i < targets.length; i++)
+    for(var i = 0; i < this.prevTargets.length; i++)
     {
-      var singleResult = targets[i].result();
+      var singleResult = this.prevTargets[i].result();
       if (singleResult.isHit()) {someoneHit = true;}
       if (!singleResult.isHit()) {someoneEvade = true;}
       if (!singleResult.critical) {someoneCrit = true;}
@@ -350,8 +328,8 @@ BattleManager.pushLinkedAction = function(list, isCrash, targets)
     if (nextaction.item().meta.counteroncrit && !someoneCrit) {return null;}
   
     if (!nextaction || !(nextaction.item()) || !nextaction.item().meta.linkskill) return null;
-    if (!((nextaction.item().meta.counter_crash && counterStartSection) ||
-      (!nextaction.item().meta.counter_crash && !counterStartSection)))
+    if (!((nextaction.item().meta.counter_crash && this.counterStartSection) ||
+      (!nextaction.item().meta.counter_crash && !this.counterStartSection)))
     {
       return null;
     }
@@ -384,7 +362,37 @@ BattleManager.pushLinkedAction = function(list, isCrash, targets)
      return null;
    };
   
-
+   //-----------------------Counters---------------------------------------------
+   var Game_Battler_prototype_endTurnAllCTB = Game_Battler.prototype.endTurnAllCTB;
+   Game_Battler.prototype.endTurnAllCTB = function() {
+      if (this.kzkCounter)
+      {
+        if (this.battler()) this.battler().refreshMotion();
+        //if (BattleManager.isTickBased()) this.onTurnEnd();
+        this.kzkCounter = false;
+      }
+      else
+      {
+        Game_Battler_prototype_endTurnAllCTB.call(this);
+      }
+   };
+  
+   var Game_BattlerBase_prototype_updateStateActionEnd = Game_BattlerBase.prototype.updateStateActionEnd;
+   Game_BattlerBase.prototype.updateStateActionEnd = function() {
+    if (!this.kzkCounter)
+    {
+      Game_BattlerBase_prototype_updateStateActionEnd.call(this);
+    }
+   };
+  
+  
+   var Game_BattlerBase_prototype_updateStateTurns = Game_BattlerBase.prototype.updateStateTurns;
+   Game_BattlerBase.prototype.updateStateTurns = function() {
+    if (!this.kzkCounter)
+    {
+      Game_BattlerBase_prototype_updateStateTurns.call(this);
+    }
+   };
   
    BattleManager.counterRateElement = function(action, target) {
       //targetの全てのステートをスキャンし、itemUsedの該当Elementへの確率を算出
@@ -542,7 +550,7 @@ BattleManager.pushLinkedAction = function(list, isCrash, targets)
     else{
       kz_Game_Battler_prototype_refresh.call(this);
     }
-    }
+}
   
    })();
   
