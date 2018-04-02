@@ -30,4 +30,25 @@ Utilitykz.splitStringToArray = function(array)
     return result;
 }
 
+var kz_DataManager_extractMetadata = DataManager.extractMetadata;
+DataManager.extractMetadata = function(data) {
+  var re = /<([^<>:]+)(:?)([^>]*)>/g;
+  data.metaArray = {};
+  for (;;) {
+      var match = re.exec(data.note);
+      if (match) {
+          if (!data.metaArray[match[1]])
+          {
+             data.metaArray[match[1]] = [];
+          }
+          if (match[2] === ':') {
+              data.metaArray[match[1]].push(match[3]);
+          } 
+      } else {
+          break;
+      }
+  }
+  kz_DataManager_extractMetadata.call(this, data);
+}
+
 })();

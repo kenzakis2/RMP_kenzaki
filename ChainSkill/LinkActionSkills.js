@@ -442,40 +442,48 @@ else
           if (state.meta.counteroncrit && !result.critical) {continue;}
           if (state.meta.statecounter)
           {
-            var stateC = state.meta.statecounter.split(",");
-            if (stateC.length >= 3) {
-              var counterState = Number(stateC[0]);
-              var counterStateRate = stateC[1];
-              var counterStateSkill = Number(stateC[2]);
-  
-              if (this._lastAddedState.indexOf(counterState) > -1 && Math.random() * 100 < counterStateRate)
-              {
-                var newaction = new Game_Action(target, true);
-                newaction.setSkill(counterStateSkill);
-                newaction._targetIndex = subject.index();
-                newaction.counter_ignorebind = state.meta.counter_ignorebind;
-                newaction.counter_exaustturn = state.meta.counter_exaustturn;
-                counterList.push(newaction);
-              }
-            }
-          }
-          if (state.meta.elementcounter)
-          {
-            var elementC = state.meta.elementcounter.split(",");
-            if (elementC.length >= 3) {
-              var counterElement = elementC[0];
-              var counterRate = elementC[1];
-              var counterSkill = elementC[2];
-              if ((extraElements.indexOf(Number(counterElement)) >= 0) && Math.random() * 100 < counterRate)
-              {
+            var meta_Array = state.metaArray ? state.metaArray.statecounter : [state.meta.statecounter]
+            meta_Array.some(function(stateWhole){
+              var stateC = stateWhole.split(",");
+              if (stateC.length >= 3) {
+                var counterState = Number(stateC[0]);
+                var counterStateRate = stateC[1];
+                var counterStateSkill = Number(stateC[2]);
+    
+                if (this._lastAddedState.indexOf(counterState) > -1 && Math.random() * 100 < counterStateRate)
+                {
                   var newaction = new Game_Action(target, true);
-                  newaction.setSkill(counterSkill);
+                  newaction.setSkill(counterStateSkill);
                   newaction._targetIndex = subject.index();
                   newaction.counter_ignorebind = state.meta.counter_ignorebind;
                   newaction.counter_exaustturn = state.meta.counter_exaustturn;
                   counterList.push(newaction);
+                  return true;
+                }
               }
-            }
+            }, this);
+          }
+          if (state.meta.elementcounter)
+          {
+            var meta_Array = state.metaArray ? state.metaArray.elementcounter : [state.meta.elementcounter]
+            meta_Array.some(function(elementWhole){
+              var elementC = elementWhole.split(",");
+              if (elementC.length >= 3) {
+                var counterElement = elementC[0];
+                var counterRate = elementC[1];
+                var counterSkill = elementC[2];
+                if ((extraElements.indexOf(Number(counterElement)) >= 0) && Math.random() * 100 < counterRate)
+                {
+                    var newaction = new Game_Action(target, true);
+                    newaction.setSkill(counterSkill);
+                    newaction._targetIndex = subject.index();
+                    newaction.counter_ignorebind = state.meta.counter_ignorebind;
+                    newaction.counter_exaustturn = state.meta.counter_exaustturn;
+                    counterList.push(newaction);
+                    return true;
+                }
+              }
+            }, this);
           }
         }
       }
