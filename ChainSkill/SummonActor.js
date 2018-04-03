@@ -211,8 +211,18 @@
 
     var kz_BattleManager_processVictory = BattleManager.processVictory;
     BattleManager.processVictory = function() {
-        $gameParty.removeAllSummons();
         kz_BattleManager_processVictory.call(this);
+        $gameParty.removeAllSummons();
+    }
+
+    var kz_BattleManager_processEscape = BattleManager.processEscape;
+    BattleManager.processEscape = function() {
+        var success = kz_BattleManager_processEscape.call(this);
+        if (success)
+        {
+            $gameParty.removeAllSummons();
+        }
+        return success;
     }
 
     Spriteset_Battle.prototype.renewAllActors = function() {
