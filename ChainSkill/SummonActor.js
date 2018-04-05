@@ -112,7 +112,7 @@
     //データ量節約とデータリセットを兼ねる
     Game_Actors.prototype.deleteActor = function(actorId) {
         if (this._data[actorId]) {
-            this._data[actorId] = null;
+            this._data[actorId] = new Game_Actor(actorId);
         }
     };
 
