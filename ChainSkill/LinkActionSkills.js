@@ -436,7 +436,7 @@ else
             continue;
           }
         
-          var result = this.result();
+          var result = this.backupResult ? this.backupResult : this.result();
           if (state.meta.counteronhit && !result.isHit()) {continue;}
           if (state.meta.counteronevade && result.isHit()) {continue;}
           if (state.meta.counteroncrit && !result.critical) {continue;}
@@ -572,7 +572,13 @@ else
       kz_Game_Battler_prototype_refresh.call(this);
     }
 }
+
+var kz_Game_Action_prototype_apply = Game_Action.prototype.apply;
+Game_Action.prototype.apply = function(target) {
+  kz_Game_Action_prototype_apply.call(this, target);
+  target.backupResult = JsonEx.makeDeepCopy(target.result());
+};
   
-   })();
+})();
   
   
