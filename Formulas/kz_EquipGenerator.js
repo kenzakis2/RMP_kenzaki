@@ -96,7 +96,7 @@ EquipGenerator.MergeItem = function(type, dataTargetId, sourceItem)
     else
     {
         var id = target[realDataTargetId].id
-        target[realDataTargetId] = target[realSourceItemId];
+        target[realDataTargetId] = JsonEx.makeDeepCopy(target[realSourceItemId]);
         target[realDataTargetId].id = id;
     }
     
