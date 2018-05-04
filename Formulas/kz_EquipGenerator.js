@@ -133,7 +133,7 @@ EquipGenerator.produceItemName = function(targetName, sourceName)
 
 EquipGenerator.clearItem = function(type, id)
 {
-    var realId = Number(id);
+    var realId = this.convertVariables(id);
     if (Number(type) == 1)
     {
         $gameSystem.generatedWeapons[realId] = null;
@@ -175,8 +175,14 @@ EquipGenerator.refreshAll = function()
 var kz_Game_System_prototype_initialize = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function() {
     kz_Game_System_prototype_initialize.call(this);
-    this.generatedWeapons = [];
-    this.generatedArmors = [];
+    if (!this.generatedWeapons)
+    {
+        this.generatedWeapons = [];
+    }
+    if (!this.generatedArmors)
+    {
+        this.generatedArmors = [];
+    }
 };
 
 var kz_DataManager_extractSaveContents = DataManager.extractSaveContents;
