@@ -33,6 +33,10 @@
  * @param Font Size
  * @desc ポップアップのフォントサイズです
  * @default 20
+ * 
+ * @param Font Overhead
+ * @desc アウトラインつきの特殊なフォント用の調整パラメーター。フォントが切れたりする際は数値を増やしてください。
+ * @default 0
  *
  * @help
  *
@@ -52,6 +56,8 @@ BattleFontEngine._fontColors = [parameters['HPdmg Color'], parameters['HPHeal Co
 BattleFontEngine._fontName = parameters['Font Name'] || 'GameFont';
 
 BattleFontEngine._fontSize = Number(parameters['Font Size']) || 20;
+
+BattleFontEngine._fontOverhead = Number(parameters['Font Overhead']) || 0;
 
 
 //-----------------------Overrides from Original Sprite_Damage---------------------------
@@ -92,20 +98,20 @@ Sprite_Damage.prototype.processValueString = function(valueString, font, color, 
         testBitmap.fontSize = size;
         var width = testBitmap.measureTextWidth(n);
 
-        var sprite = this.createChildSpriteText(n, font, color, size, width);
-        sprite.x = (i - (valueString.length - 1) / 2) * sprite.width;
+        var sprite = this.createChildSpriteText(n, font, color, size, width, BattleFontEngine._fontOverhead);
+        sprite.x = (i - (valueString.length - 1) / 2) * sprite.width + BattleFontEngine._fontOverhead * 2;
         sprite.dy = -i;
     }
 }
 
-Sprite_Damage.prototype.createChildSpriteText = function(text, font, color, size, width) {
+Sprite_Damage.prototype.createChildSpriteText = function(text, font, color, size, width, overhead) {
     var sprite = new Sprite();
-    sprite.bitmap= new Bitmap(width, size)
+    sprite.bitmap= new Bitmap(width + overhead * 2, size)
     sprite.bitmap.clear();
     sprite.bitmap.fontFace = font;
     sprite.bitmap.textColor = color;
     sprite.bitmap.fontSize = size;
-    sprite.bitmap.drawText(text, 0, 0, width, size, 'left');
+    sprite.bitmap.drawText(text, overhead, 0, width + overhead * 2, size, 'center');
     sprite.anchor.x = 0.5;
     sprite.anchor.y = 1;
     sprite.y = -40;
@@ -115,4 +121,3 @@ Sprite_Damage.prototype.createChildSpriteText = function(text, font, color, size
 };
 
 })();
-
