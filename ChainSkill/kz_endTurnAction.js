@@ -67,6 +67,7 @@
     }
 
     Game_Battler.prototype.produceEndTurnExAction = function () {
+        this.clearActions();
         this.states().forEach(function (state) {
             var SkillID = state.meta.state_skill;//ステートのメモに書いてあるIDをSkillIDに
             if (SkillID) {
