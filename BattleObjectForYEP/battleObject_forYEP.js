@@ -75,15 +75,16 @@
 // Sprite_BattleObject
 //
 // The sprite for displaying a battle object
+(function () {
 
-function Sprite_BattleObject() {
+  function Sprite_BattleObject() {
     this.initialize.apply(this, arguments);
-}
+  }
 
-Sprite_BattleObject.prototype = Object.create(Sprite_Battler.prototype);
-Sprite_BattleObject.prototype.constructor = Sprite_BattleObject;
+  Sprite_BattleObject.prototype = Object.create(Sprite_Battler.prototype);
+  Sprite_BattleObject.prototype.constructor = Sprite_BattleObject;
 
-Sprite_BattleObject.prototype.initialize = function(picName, id, x, y) {
+  Sprite_BattleObject.prototype.initialize = function (picName, id, x, y) {
     Sprite_Battler.prototype.initialize.call(this, null);
     var objbattler = new Game_Battler();
     objbattler._parentSpriteId = id;
@@ -94,111 +95,105 @@ Sprite_BattleObject.prototype.initialize = function(picName, id, x, y) {
     this._homeY = y;
     this._id = id;
     this.scale.x = -1;
-};
+  };
 
-Sprite_BattleObject.prototype.update = function() {
+  Sprite_BattleObject.prototype.update = function () {
     Sprite_Base.prototype.update.call(this);
     this.updateMain();
     this.updateAnimation();
     this.updateFloat();
-};
+  };
 
-Sprite_BattleObject.prototype.updateVisibility = function() {
+  Sprite_BattleObject.prototype.updateVisibility = function () {
     Sprite_Base.prototype.updateVisibility.call(this);
-};
+  };
 
-Sprite_BattleObject.prototype.updateMain = function() {
+  Sprite_BattleObject.prototype.updateMain = function () {
     this.updateBitmap();
     this.updateMove();
     this.updatePosition();
-};
+  };
 
-Sprite_BattleObject.prototype.updateBitmap = function() {
+  Sprite_BattleObject.prototype.updateBitmap = function () {
     Sprite_Battler.prototype.updateBitmap.call(this);
-}
-
-//------Yanfly関連編集----
-kzk_BattleManager_processActionSequence =
-  BattleManager.processActionSequence;
-BattleManager.processActionSequence = function(actionName, actionArgs) {
-  // Action Objects
-  if (actionName === 'CREATE OBJECT') {
-    return this.createActionObject(actionArgs);
   }
-  if (actionName === 'DELETE OBJECT') {
-    return this.deleteActionObject(actionArgs);
-  }
-  
-  return kzk_BattleManager_processActionSequence.call(this,
-    actionName, actionArgs);
-};
 
-BattleManager.createActionObject = function(actionArgs)
-{
-  var objectIndex = Number(actionArgs[0]);
-  var filename = actionArgs[1];
-  var overheadX = Number(actionArgs[3]);
-  var overheadY = Number(actionArgs[4]);
-  var x = 0;
-  var y = 0;
-  if (actionArgs[2].toUpperCase() == "USER")
-  {
-    var subjectSprite = this._subject.battler();
-    x = subjectSprite._homeX;
-    y = subjectSprite._homeY;
-  }
-  
-  var newSprite = new Sprite_BattleObject(filename, objectIndex, x + overheadX, y + overheadY);
-  this._spriteset._battleField.addChild(newSprite);
-  this._spriteset._battleObjectSprites[objectIndex] = newSprite;
-}
+  //------Yanfly関連編集----
+  var kzk_BattleManager_processActionSequence =
+    BattleManager.processActionSequence;
+  BattleManager.processActionSequence = function (actionName, actionArgs) {
+    // Action Objects
+    if (actionName === 'CREATE OBJECT') {
+      return this.createActionObject(actionArgs);
+    }
+    if (actionName === 'DELETE OBJECT') {
+      return this.deleteActionObject(actionArgs);
+    }
 
-BattleManager.deleteActionObject = function(actionArgs)
-{
-  var objectIndex = Number(actionArgs[0]);
-  var target = this._spriteset._battleObjectSprites[objectIndex];
-  if (target)
-  {
-    this._spriteset._battleField.removeChild(target);
-    this._spriteset._battleObjectSprites[objectIndex] = null;
-  }
-}
+    return kzk_BattleManager_processActionSequence.call(this,
+      actionName, actionArgs);
+  };
 
-//SpriteSet
-var Spriteset_Battle_prototype_createEnemies = Spriteset_Battle.prototype.createEnemies;
-Spriteset_Battle.prototype.createEnemies = function() {
+  BattleManager.createActionObject = function (actionArgs) {
+    var objectIndex = Number(actionArgs[0]);
+    var filename = actionArgs[1];
+    var overheadX = Number(actionArgs[3]);
+    var overheadY = Number(actionArgs[4]);
+    var x = 0;
+    var y = 0;
+    if (actionArgs[2].toUpperCase() == "USER") {
+      var subjectSprite = this._subject.battler();
+      x = subjectSprite._homeX;
+      y = subjectSprite._homeY;
+    }
+
+    var newSprite = new Sprite_BattleObject(filename, objectIndex, x + overheadX, y + overheadY);
+    this._spriteset._battleField.addChild(newSprite);
+    this._spriteset._battleObjectSprites[objectIndex] = newSprite;
+  }
+
+  BattleManager.deleteActionObject = function (actionArgs) {
+    var objectIndex = Number(actionArgs[0]);
+    var target = this._spriteset._battleObjectSprites[objectIndex];
+    if (target) {
+      this._spriteset._battleField.removeChild(target);
+      this._spriteset._battleObjectSprites[objectIndex] = null;
+    }
+  }
+
+  //SpriteSet
+  var Spriteset_Battle_prototype_createEnemies = Spriteset_Battle.prototype.createEnemies;
+  Spriteset_Battle.prototype.createEnemies = function () {
     Spriteset_Battle_prototype_createEnemies.call(this);
     this._battleObjectSprites = [];
-};
+  };
 
-var Spriteset_Battle_prototype_battlerSprites = Spriteset_Battle.prototype.battlerSprites;
-Spriteset_Battle.prototype.battlerSprites = function() {
+  var Spriteset_Battle_prototype_battlerSprites = Spriteset_Battle.prototype.battlerSprites;
+  Spriteset_Battle.prototype.battlerSprites = function () {
     var original = Spriteset_Battle_prototype_battlerSprites.call(this);
-    var filteredBattleObject = this._battleObjectSprites.filter(function(element, index, array) 
-      {
-        return (element != null);
-      });
+    var filteredBattleObject = this._battleObjectSprites.filter(function (element, index, array) {
+      return (element != null);
+    });
     return original.concat(filteredBattleObject);
-};
+  };
 
 
-kzk_BattleManager_getSprite = BattleManager.getSprite;
-BattleManager.getSprite = function(battler) {
-  if (battler._parentSpriteId)
-  {
-    return this._spriteset._battleObjectSprites[battler._parentSpriteId];
-  }
-  else
-  {
-    return kzk_BattleManager_getSprite.call(this, battler);
-  }
-};
+  var kzk_BattleManager_getSprite = BattleManager.getSprite;
+  BattleManager.getSprite = function (battler) {
+    if (battler._parentSpriteId) {
+      return this._spriteset._battleObjectSprites[battler._parentSpriteId];
+    }
+    else {
+      return kzk_BattleManager_getSprite.call(this, battler);
+    }
+  };
 
-kzk_BattleManager_makeActionTargets = BattleManager.makeActionTargets;
-BattleManager.makeActionTargets = function(string) {
+  var kzk_BattleManager_makeActionTargets = BattleManager.makeActionTargets;
+  BattleManager.makeActionTargets = function (string) {
     if (string.match(/OBJECT[ ](\d+)/i)) {
       var target = this._spriteset._battleObjectSprites[parseInt(RegExp.$1)];
       if (target) return [target._battler];
     }
     return kzk_BattleManager_makeActionTargets.call(this, string);
-};
+  };
+})();
