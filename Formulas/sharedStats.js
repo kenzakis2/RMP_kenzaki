@@ -60,7 +60,6 @@ Object.defineProperties(Game_BattlerBase.prototype, {
                 return $gameSystem.sharedHp;
             }
             else {
-                console.log("get:" + this._trueHp);
                 return this._trueHp;
             }
         },
@@ -69,7 +68,6 @@ Object.defineProperties(Game_BattlerBase.prototype, {
                 $gameSystem.sharedHp = val;
             }
             else {
-                console.log("set:" + val);
                 this._trueHp = val;
             }
         }, configurable: true
