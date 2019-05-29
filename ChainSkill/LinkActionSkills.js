@@ -394,12 +394,11 @@
       formatted.target = this;
       return formatted;
     }, this);
-
     //1番手のみ、味方全員のインターセプトを上乗せする
     if (index < 1)
     {
-      var unitList = this.friendsUnit.filter(function(unit){
-          return unit.index() != this.index();
+      var unitList = this.friendsUnit().members().filter(function(unit){
+          return unit.name() != this.name();
       }, this);
 
       for (var i = 0; i < unitList.length; i++)
@@ -412,7 +411,7 @@
           formatted.target = unitList[i];
           return formatted;
         }, this);
-        applicableStateList.concat(list);
+        applicableStateList = applicableStateList.concat(list);
       }
     }
 
@@ -477,6 +476,7 @@
               var counterSkill = isReflect ? action.item().id : Number(elementC[2]);
 
               if ((extraElements.indexOf(Number(counterElement)) >= 0) && Math.random() * 100 < counterRate) {
+                
                 var newaction = new Game_Action(applicableStateList[i].target, true);
                 if (!incoming_isSkill && isReflect) {
                   newaction.setItem(counterSkill);
