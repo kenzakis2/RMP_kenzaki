@@ -51,7 +51,6 @@
 * ステートのメモに<barrier:300> (数字は軽減値）を入れると、値がなくなるまで軽減してくれます。
 * 尚軽減値はダメージ計算式と同様の式を入れる事も可能ですが、 '>' が使えない事とa(攻撃側)が存在せずb(付与される側)のみ使用可能であることにご留意ください。
 */
-var $BarrierList = [];
 
 (function () {
 
@@ -146,19 +145,16 @@ var $BarrierList = [];
   var Game_Battler_prototype_addState = Game_Battler.prototype.addState;
   Game_Battler.prototype.addState = function (stateId) {
     Game_Battler_prototype_addState.call(this, stateId);
-    if (!this._barrierList) {
-      this._barrierList = [];
-    }
 
-    targetState = $dataStates[stateId];
+    var targetState = $dataStates[stateId];
     var targetBarrierState = Barrier.findId(this._barrierList, stateId);
     if (targetState && (targetState.meta.barrier || targetState.meta.healablebarrier)) {
       var b = this;
       var b_str = targetState.meta.healablebarrier ? targetState.meta.healablebarrier : targetState.meta.barrier;
       var b_value = eval(b_str);
-      if (!b_value) {b_value = 1;}
+      if (!b_value) { b_value = 1; }
       var b_healable = (targetState.meta.healablebarrier && targetState.meta.healablebarrier > 0);
-      
+
 
       if (!targetBarrierState) {
         var barrierStateObject = {};
@@ -175,17 +171,20 @@ var $BarrierList = [];
     }
   };
 
-  var Game_Battler_prototype_removeState = Game_Battler.prototype.removeState;
-  Game_Battler.prototype.removeState = function (stateId) {
-    Game_Battler_prototype_removeState.call(this, stateId)
-    if (!this._barrierList) {
-      this._barrierList = [];
-    }
-    targetState = $dataStates[stateId];
+  var Game_BattlerBase_prototype_eraseState = Game_BattlerBase.prototype.eraseState;
+  Game_BattlerBase.prototype.eraseState = function (stateId) {
+    Game_BattlerBase_prototype_eraseState.call(this, stateId)
+    var targetState = $dataStates[stateId];
     if (targetState && (targetState.meta.barrier || targetState.meta.healablebarrier)) {
       var targetId = Barrier.findIdIndex(this._barrierList, stateId);
       this._barrierList.splice(targetId, 1);
     }
+  };
+
+  var kz_Game_BattlerBase_prototype_clearStates = Game_BattlerBase.prototype.clearStates;
+  Game_BattlerBase.prototype.clearStates = function () {
+    kz_Game_BattlerBase_prototype_clearStates.call(this);
+    target._barrierList = [];
   };
 
   //Dmg系
@@ -226,7 +225,7 @@ var $BarrierList = [];
             }
             removalList.push(blist[i].id);
             console.log(PiercingChain);
-            if (!PiercingChain){break;}
+            if (!PiercingChain) { break; }
           }
         }
         for (var i = 0; i < removalList.length; i++) {
@@ -260,7 +259,7 @@ var $BarrierList = [];
             target.result().barrieredDmg.push(dmgObject);
 
             value -= dmgOnBarrier;
-            if (!PiercingChain){break;}
+            if (!PiercingChain) { break; }
           }
         }
       }
