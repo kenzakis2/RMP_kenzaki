@@ -184,7 +184,7 @@
   var kz_Game_BattlerBase_prototype_clearStates = Game_BattlerBase.prototype.clearStates;
   Game_BattlerBase.prototype.clearStates = function () {
     kz_Game_BattlerBase_prototype_clearStates.call(this);
-    target._barrierList = [];
+    this._barrierList = [];
   };
 
   //Dmg系
