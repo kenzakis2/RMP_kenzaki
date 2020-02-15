@@ -1,5 +1,5 @@
 /*:ja
- * @plugindesc バリアステートの実装
+ * @plugindesc 選択可能な盗めるアイテム
  * @author 剣崎宗二
  *
  * @param Success Text
@@ -21,6 +21,16 @@
  * @min -99999
  * @desc 盗めるアイテム窓のX座標
  * @default 0
+ * 
+ * @param Steal Window Width
+ * @type number
+ * @desc 盗めるアイテム窓横幅
+ * @default 300
+ * 
+ * @param Steal Window Height
+ * @type number
+ * @desc 盗めるアイテム窓縦幅
+ * @default 200
  *
  *
  * @help 
@@ -40,6 +50,8 @@
     var failText = parameters['Fail Text'];
     var _swX = Number(parameters['Steal Window X']) || 0;
     var _swY = Number(parameters['Steal Window Y']) || 0;
+    var _swW = Number(parameters['Steal Window Width']) || 300;
+    var _swH = Number(parameters['Steal Window Height']) || 200;
 
     function GetItemFromObj(stealDataObj) {
         var database = null;
@@ -72,7 +84,7 @@
             obj.type = splitArray[0];
             obj.itemId = Number(splitArray[1]);
             obj.rate = splitArray[2];
-            obj.rateText = eval(splitArray[2]) * 100;
+            obj.rateText = eval(splitArray[2]) * 100 + '%';
             return obj;
         }, this);
 
@@ -193,11 +205,11 @@
     };
 
     Window_BattleStealTarget.prototype.windowWidth = function () {
-        return 300;
+        return _swW;
     };
 
     Window_BattleStealTarget.prototype.windowHeight = function (x, y) {
-        return 200;
+        return _swH;
     };
 
     Window_BattleStealTarget.prototype.isCurrentItemEnabled = function () {
@@ -227,8 +239,8 @@
         var item = GetItemFromObj(element);
         var rect = this.itemRect(index);
 
-        this.drawText(item.name, rect.x, rect.y, rect.width - 30);
-        this.drawText(element.rateText, rect.x + rect.width - 30, rect.y, 30);
+        this.drawText(item.name, rect.x, rect.y, rect.width - 65);
+        this.drawText(element.rateText, rect.x + rect.width - 50, rect.y, 50);
     };
 
     //---------------------------MetaArray-----------------------------------
