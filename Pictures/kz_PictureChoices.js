@@ -1,5 +1,5 @@
 /*:ja
- * @plugindesc 選択肢の表示の際、選択肢を画像で、画面の自由な場所に配置できるようにします。
+ * @plugindesc v1.02 - 選択肢の表示の際、選択肢を画像で、画面の自由な場所に配置できるようにします。
  * @author Souji Kenzaki
  *
  * @param Cursor Bitmap Name
@@ -51,6 +51,23 @@
  * Cursor Max Frameが3だった場合
  * cs0.png~cs3.pngまでが順に再生されその後cs0.pngに巻き戻りループします。
  * 
+ * スクリプトでゲーム中に以下を変更できます。
+ * 
+ * カーソル基本画像cn.pngに
+ * $gameSystem.ChoiceCursor.bmp = "cn";
+ * 
+ * カーソルのx補正値変更
+ * $gameSystem.ChoiceCursor.x = 3;
+ * 
+ * カーソルのy補正値変更
+ * $gameSystem.ChoiceCursor.y = 5;
+ * 
+ * カーソルアニメのフレーム数変更
+ * $gameSystem.ChoiceCursor.maxFrame = 10;
+ * 
+ * カーソルアニメの再生間隔変更
+ * $gameSystem.ChoiceCursor.interval = 20;
+ * 
  * 
  * 
  * 開発協力Special Thanks：
@@ -82,6 +99,17 @@
         return this.loadBitmap('img/choices/', filename, hue, true);
     };
 
+    const kz_Game_System_prototype_initialize = Game_System.prototype.initialize;
+    Game_System.prototype.initialize = function () {
+        kz_Game_System_prototype_initialize.call(this);
+        this.ChoiceCursor = {}
+        this.ChoiceCursor.bmp = _cursorBmp;
+        this.ChoiceCursor.x = _cursorX;
+        this.ChoiceCursor.y = _cursorY;
+        this.ChoiceCursor.maxFrame = _c_maxFrame;
+        this.ChoiceCursor.interval = _c_Interval;
+    };
+
     var kz_Window_ChoiceList_prototype_windowWidth = Window_ChoiceList.prototype.windowWidth;
     Window_ChoiceList.prototype.windowWidth = function () {
         if (!$gameSystem.graphicalChoices) {
@@ -103,7 +131,7 @@
         kz_Window_ChoiceList_prototype_initialize.call(this, messageWindow);
 
         this._choiceSprite = [];
-        this._cursorSprite = new Sprite_ChoiceCursor(_c_maxFrame, _c_Interval);
+        this._cursorSprite = new Sprite_ChoiceCursor($gameSystem.ChoiceCursor.maxFrame, $gameSystem.ChoiceCursor.interval);
     };
 
     var kz_Window_ChoiceList_prototype_start = Window_ChoiceList.prototype.start;
@@ -166,8 +194,8 @@
                 return;
             }
             this._cursorSprite.show();
-            this._cursorSprite.x = this._choiceSprite[index].x + _cursorX;
-            this._cursorSprite.y = this._choiceSprite[index].y + _cursorY;
+            this._cursorSprite.x = this._choiceSprite[index].x + $gameSystem.ChoiceCursor.x;
+            this._cursorSprite.y = this._choiceSprite[index].y + $gameSystem.ChoiceCursor.y;
         }
     };
 
@@ -185,7 +213,6 @@
                 var ymax = this._choiceSprite[i].y + this._choiceSprite[i].height;
 
                 if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
-                    console.log(i);
                     return i;
                 }
             }
@@ -204,16 +231,15 @@
     function Sprite_ChoiceCursor() {
         this.initialize.apply(this, arguments);
     }
-    
+
     Sprite_ChoiceCursor.prototype = Object.create(Sprite_Base.prototype);
     Sprite_ChoiceCursor.prototype.constructor = Sprite_Weapon;
-    
-    Sprite_ChoiceCursor.prototype.initialize = function(cursorMaxFrame, cursorInterval) {
+
+    Sprite_ChoiceCursor.prototype.initialize = function (cursorMaxFrame, cursorInterval) {
         Sprite_Base.prototype.initialize.call(this);
 
-        if (!cursorMaxFrame)
-        {
-            this.bitmap = ImageManager.loadChoices(_cursorBmp);
+        if (!cursorMaxFrame) {
+            this.bitmap = ImageManager.loadChoices($gameSystem.ChoiceCursor.bmp);
         }
 
         this._maxFrame = cursorMaxFrame;
@@ -223,29 +249,34 @@
         this._currentCursorPicName = "";
     };
 
-    Sprite_ChoiceCursor.prototype.update = function() {
+    Sprite_ChoiceCursor.prototype.update = function () {
         Sprite_Base.prototype.update.call(this);
         this.updateCursorFrameAnimation();
     };
 
-    Sprite_ChoiceCursor.prototype.updateCursorFrameAnimation = function() {
-        if (!this._maxFrame) return;
-        console.log(this._currentInterval + "/" + this._interval)
+    Sprite_ChoiceCursor.prototype.updateCursorFrameAnimation = function () {
+        this._maxFrame = $gameSystem.ChoiceCursor.maxFrame;
+        this._interval = $gameSystem.ChoiceCursor.interval;
 
-        if (this._currentInterval > this._interval)
-        {
-            console.log("switch");
+        if (!this._maxFrame) {
+            if (this._currentCursorPicName != $gameSystem.ChoiceCursor.bmp)
+            {
+                this.bitmap = ImageManager.loadChoices($gameSystem.ChoiceCursor.bmp);
+                this._currentCursorPicName = $gameSystem.ChoiceCursor.bmp;
+            }
+            return; 
+        }
+
+        if (this._currentInterval > this._interval) {
             this._currentFrame++;
             this._currentInterval = 0;
         }
 
-        if (this._currentFrame > this._maxFrame)
-        {
+        if (this._currentFrame > this._maxFrame) {
             this._currentFrame = 0;
         }
 
-        if (this._currentCursorPicName != this.cursorPicName())
-        {
+        if (this._currentCursorPicName != this.cursorPicName()) {
             this.bitmap = ImageManager.loadChoices(this.cursorPicName());
             this._currentCursorPicName = this.cursorPicName();
         }
@@ -253,8 +284,8 @@
         this._currentInterval++;
     };
 
-    Sprite_ChoiceCursor.prototype.cursorPicName = function() {
-        return _cursorBmp + String(this._currentFrame);
+    Sprite_ChoiceCursor.prototype.cursorPicName = function () {
+        return $gameSystem.ChoiceCursor.bmp + String(this._currentFrame);
     }
 
 
