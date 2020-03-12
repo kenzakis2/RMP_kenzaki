@@ -404,7 +404,7 @@ Sprite_MenuCommand.prototype.updateAnimeMove = function () {
     }
 
     if (this.animeFrameCount >= Number(this.cmdData.startFrame)) {
-        let frameLeft =  Number(this.cmdData.endFrame) - this.animeFrameCount;
+        var frameLeft =  Number(this.cmdData.endFrame) - this.animeFrameCount;
         this.x += Math.round((keyX - this.x) / frameLeft);
         this.y += Math.round((keyY - this.y) / frameLeft);
         this.opacity += Math.round((255 - this.opacity) / frameLeft);
