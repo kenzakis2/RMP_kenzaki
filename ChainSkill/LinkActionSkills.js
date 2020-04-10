@@ -306,7 +306,7 @@
       var singleResult = this.prevTargets[i].result();
       if (singleResult.isHit()) { someoneHit = true; }
       if (!singleResult.isHit()) { someoneEvade = true; }
-      if (!singleResult.critical) { someoneCrit = true; }
+      if (singleResult.critical) { someoneCrit = true; }
     }
     if (nextaction.item().meta.counteronhit && !someoneHit) { return null; }
     if (nextaction.item().meta.counteronevade && !someoneEvade) { return null; }

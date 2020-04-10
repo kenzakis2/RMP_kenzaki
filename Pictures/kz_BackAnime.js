@@ -34,7 +34,7 @@
     Sprite_Base.prototype.findFirstBattlerIndex = function () {
         var package_children = this.parent.children;
         for (var i = 0; i < package_children.length; i++) {
-            if (package_children[i] instanceof Sprite_Battler) {
+            if (package_children[i] instanceof Sprite_Battler || package_children[i] instanceof Sprite_Character) {
                 return i;
             }
         }
