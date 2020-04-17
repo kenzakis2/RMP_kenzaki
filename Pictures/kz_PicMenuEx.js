@@ -1,5 +1,5 @@
 /*:ja
- * @plugindesc メニューコマンドの画像化（動き有） - v1.01
+ * @plugindesc メニューコマンドの画像化（動き有） - v1.02
  * @author 剣崎宗二
  *
  * @param icon width
@@ -125,6 +125,7 @@
  * 
  * 更新履歴
  * v1.01 - 1.6.0以前のバージョンで動かない問題を修正
+ * v1.02 - MenuIcon.pngを使用しないにも関わらずないとエラーが出る問題を修正
  *
 */
 /*~struct~SymbolChart:
@@ -214,12 +215,6 @@ var _cursorDisplay = eval(parameters['display cursor']);
 
 var _windowBack = parameters['window background file'] || '';
 
-
-var kz_Scene_Boot_loadSystemImages = Scene_Boot.loadSystemImages;
-Scene_Boot.loadSystemImages = function () {
-    kz_Scene_Boot_loadSystemImages.call(this);
-    ImageManager.reserveSystem('MenuIcon');
-};
 
 var kz_Window_MenuCommand_prototype_initialize = Window_MenuCommand.prototype.initialize;
 Window_MenuCommand.prototype.initialize = function (x, y) {
