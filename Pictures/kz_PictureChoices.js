@@ -1,5 +1,5 @@
 /*:ja
- * @plugindesc v1.02 - 選択肢の表示の際、選択肢を画像で、画面の自由な場所に配置できるようにします。
+ * @plugindesc v1.03 - 選択肢の表示の際、選択肢を画像で、画面の自由な場所に配置できるようにします。
  * @author Souji Kenzaki
  *
  * @param Cursor Bitmap Name
@@ -124,6 +124,24 @@
             return kz_Window_ChoiceList_prototype_windowHeight.call(this);
         }
         return 0;
+    };
+
+    var kz_Window_ChoiceList_prototype_cursorRight = Window_ChoiceList.prototype.cursorRight;
+    Window_ChoiceList.prototype.cursorRight = function(wrap) {
+        if (!$gameSystem.graphicalChoices) {
+            kz_Window_ChoiceList_prototype_cursorRight.call(this, wrap);
+            return;
+        }
+        this.cursorDown(wrap);
+    };
+    
+    var kz_Window_ChoiceList_prototype_cursorLeft = Window_ChoiceList.prototype.cursorLeft;
+    Window_ChoiceList.prototype.cursorLeft = function(wrap) {
+        if (!$gameSystem.graphicalChoices) {
+            kz_Window_ChoiceList_prototype_cursorLeft.call(this, wrap);
+            return;
+        }
+        this.cursorUp(wrap);
     };
 
     var kz_Window_ChoiceList_prototype_initialize = Window_ChoiceList.prototype.initialize;
