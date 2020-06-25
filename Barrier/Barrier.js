@@ -2,27 +2,6 @@
 // Barrier.js
 //=============================================================================
 
-/*:en
-* @plugindesc Implementing "Barrier" States
-* @author Souji Kenzaki
-*
-* @param BarrierText
-* @desc The text which will be displayed when barrier is not broken when attacked (%1=吸収ダメージ量 %2=残強度)
-* @default The barrier took %1 damage, and is at strength of %2!
-*
-* @param BarrierBreakText
-* @desc Message when barrier is broken
-* @default Barrier has been broken!
-*
-* @param Piercing
-* @desc Whether the damage that exceeds barrier strength will be dealt to it's user.
-* @default true
-*
-* @help
-* This is a plugin for implementing barrier type of states.
-* in the memo section of state, write in format of <barrier: [Strength]>
-* such as <barrier:300>. It will negate damage in exchange for strength reduction, until it runs out of strength.
-*/
 
 /*:ja
 * @plugindesc バリアステートの実装
@@ -46,10 +25,23 @@
 * @desc 貫通したダメージが次の障壁に阻まれるかどうか。falseの場合貫通ダメージは他の障壁を無視してキャラクターに入る。
 * @default true
 *
+* @param BarrierAnime 
+* @type number
+* @desc バリアで防げた場合のアニメーションID（デフォルト）
+* @default 1
+* 
+* @param BarrierBreakAnime 
+* @type number
+* @desc バリアが割れた場合のアニメーションID（デフォルト）
+* @default 2
+*
 * @help
 * ダメージを軽減するバリアを再現するためのプラグインです。
 * ステートのメモに<barrier:300> (数字は軽減値）を入れると、値がなくなるまで軽減してくれます。
 * 尚軽減値はダメージ計算式と同様の式を入れる事も可能ですが、 '>' が使えない事とa(攻撃側)が存在せずb(付与される側)のみ使用可能であることにご留意ください。
+* アニメタグはステートに<BarrierBreakAnime:1>　（割れた場合ID3を再生）
+* <BarrierAnime:3>　　（割れなかった場合ID1を再生）
+* 等。
 */
 
 (function () {
@@ -59,6 +51,9 @@
   var BarrierBreakText = parameters['BarrierBreakText'];
   var Piercing = (parameters['Piercing'] == "true");
   var PiercingChain = (parameters['PiercingChain'] == "true");
+
+  var BarrierAnime = Number(parameters['BarrierAnime']);
+  var BarrierBreakAnime = Number(parameters['BarrierBreakAnime']);
 
   function Barrier() {
     throw new Error('This is a static class');
@@ -113,6 +108,19 @@
     }
   }
 
+  Barrier.FindAnimeId = function (stateId, broken) {
+    if ($dataStates[stateId] && $dataStates[stateId].meta)
+    {
+       if (broken && $dataStates[stateId].meta.BarrierBreakAnime)
+       {return Number($dataStates[stateId].meta.BarrierBreakAnime)}
+
+       if (!broken && $dataStates[stateId].meta.BarrierAnime)
+       {return Number($dataStates[stateId].meta.BarrierAnime)}
+    }
+
+    return broken ? BarrierBreakAnime : BarrierAnime;
+  }
+
   //Message系
   Window_BattleLog.prototype.displayBarrier = function (target) {
     var targetBarrier = target._barrierList;
@@ -124,6 +132,7 @@
     targetBarrierBreak.forEach(function (element) {
       var name = $dataStates[element.id].name;
       var dmg = element.value;
+      local.push('showAnimation', target, target, Barrier.FindAnimeId(element.id, true));
       local.push('addText', BarrierBreakText.format(name, dmg));
     }, this);
 
@@ -131,6 +140,7 @@
       var name = $dataStates[element.id].name;
       var dmg = element.value;
       var left = Barrier.findId(targetBarrier, element.id).value;
+      local.push('showAnimation', target, target, Barrier.FindAnimeId(element.id, false));
       local.push('addText', BarrierText.format(name, dmg, left));
     }, this);
   };
@@ -153,7 +163,7 @@
       var b_str = targetState.meta.healablebarrier ? targetState.meta.healablebarrier : targetState.meta.barrier;
       var b_value = eval(b_str);
       if (!b_value) { b_value = 1; }
-      var b_healable = (targetState.meta.healablebarrier && targetState.meta.healablebarrier > 0);
+      var b_healable = !!targetState.meta.healablebarrier;
 
 
       if (!targetBarrierState) {
