@@ -132,7 +132,7 @@
     targetBarrierBreak.forEach(function (element) {
       var name = $dataStates[element.id].name;
       var dmg = element.value;
-      local.push('showAnimation', target, target, Barrier.FindAnimeId(element.id, true));
+      local.push('showAnimation', target, [target], Barrier.FindAnimeId(element.id, true));
       local.push('addText', BarrierBreakText.format(name, dmg));
     }, this);
 
@@ -140,7 +140,7 @@
       var name = $dataStates[element.id].name;
       var dmg = element.value;
       var left = Barrier.findId(targetBarrier, element.id).value;
-      local.push('showAnimation', target, target, Barrier.FindAnimeId(element.id, false));
+      local.push('showAnimation', target, [target], Barrier.FindAnimeId(element.id, false));
       local.push('addText', BarrierText.format(name, dmg, left));
     }, this);
   };
