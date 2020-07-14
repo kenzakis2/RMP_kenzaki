@@ -1,5 +1,5 @@
 //=============================================================================
-// kz_endTurnAction.js
+// kz_endTurnAction.js - v1.01
 //=============================================================================
 
 /*:
@@ -14,6 +14,9 @@
  * <state_skill:スキルのID>
  * 例：<state_skill:12>ID12のスキルが発動します。
  * 
+ * 
+ * 履歴:
+ * v1.01 - 複数発動の際のmakeTargetsエラーを修正
  */
 (function () {
 
@@ -48,11 +51,6 @@
         this._subject = nextExAction;
         this.startAction();
         this._subject.removeCurrentAction();
-        if (this._subject.currentAction()) //if there is still things to do with this battler
-        {
-            //put it back
-            BattleManager.exTurnAction.push(this._subject);
-        }
     };
 
     BattleManager.produceEndTurnExAction = function () {
