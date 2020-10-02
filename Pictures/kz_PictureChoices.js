@@ -154,6 +154,8 @@
 
     var kz_Window_ChoiceList_prototype_start = Window_ChoiceList.prototype.start;
     Window_ChoiceList.prototype.start = function () {
+        this.removeAllChoiceSprites();
+
         if ($gameSystem.graphicalChoices) {
             this.populateChoiceSprites();
         }
@@ -167,8 +169,6 @@
     };
 
     Window_ChoiceList.prototype.populateChoiceSprites = function () {
-        this.removeAllChoiceSprites();
-
         var choices = $gameMessage.choices();
         for (var i = 0; i < choices.length; i++) {
             var _data = choices[i].split('|')
@@ -214,6 +214,10 @@
             this._cursorSprite.show();
             this._cursorSprite.x = this._choiceSprite[index].x + $gameSystem.ChoiceCursor.x;
             this._cursorSprite.y = this._choiceSprite[index].y + $gameSystem.ChoiceCursor.y;
+        }
+        else if (this._cursorSprite)
+        {
+            this._cursorSprite.hide();
         }
     };
 
