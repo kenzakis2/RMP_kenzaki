@@ -1,5 +1,5 @@
-/*:ja
- * @plugindesc v1.04 - 選択肢の表示の際、選択肢を画像で、画面の自由な場所に配置できるようにします。
+/*:
+ * @plugindesc v1.05 - 言語設定を微修正
  * @author Souji Kenzaki
  *
  * @param Cursor Bitmap Name
