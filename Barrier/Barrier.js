@@ -42,6 +42,8 @@
 * アニメタグはステートに<BarrierBreakAnime:1>　（割れた場合ID3を再生）
 * <BarrierAnime:3>　　（割れなかった場合ID1を再生）
 * 等。
+* <barrierelement:3,9>で属性ID3,9のみをガード。
+* スキルタグ<ignorebarrier>はバリアを強制貫通します。
 */
 
 (function () {
@@ -109,13 +111,10 @@
   }
 
   Barrier.FindAnimeId = function (stateId, broken) {
-    if ($dataStates[stateId] && $dataStates[stateId].meta)
-    {
-       if (broken && $dataStates[stateId].meta.BarrierBreakAnime)
-       {return Number($dataStates[stateId].meta.BarrierBreakAnime)}
+    if ($dataStates[stateId] && $dataStates[stateId].meta) {
+      if (broken && $dataStates[stateId].meta.BarrierBreakAnime) { return Number($dataStates[stateId].meta.BarrierBreakAnime) }
 
-       if (!broken && $dataStates[stateId].meta.BarrierAnime)
-       {return Number($dataStates[stateId].meta.BarrierAnime)}
+      if (!broken && $dataStates[stateId].meta.BarrierAnime) { return Number($dataStates[stateId].meta.BarrierAnime) }
     }
 
     return broken ? BarrierBreakAnime : BarrierAnime;
@@ -139,7 +138,11 @@
     targetBarrierDmg.forEach(function (element) {
       var name = $dataStates[element.id].name;
       var dmg = element.value;
-      var left = Barrier.findId(targetBarrier, element.id).value;
+
+      var barrierDmgd = Barrier.findId(targetBarrier, element.id);
+      if (!barrierDmgd) return;
+
+      var left = barrierDmgd.value;
       local.push('showAnimation', target, [target], Barrier.FindAnimeId(element.id, false));
       local.push('addText', BarrierText.format(name, dmg, left));
     }, this);
@@ -164,6 +167,7 @@
       var b_value = eval(b_str);
       if (!b_value) { b_value = 1; }
       var b_healable = !!targetState.meta.healablebarrier;
+      var b_element = targetState.meta.barrierelement ? targetState.meta.barrierelement.split(",") : [];
 
 
       if (!targetBarrierState) {
@@ -172,6 +176,7 @@
         barrierStateObject.value = b_value;
         barrierStateObject.healable = b_healable;
         barrierStateObject.maxValue = b_value;
+        barrierStateObject.elements = b_element;
         this._barrierList.push(barrierStateObject);
       }
       else {
@@ -200,7 +205,8 @@
   //Dmg系
   var Game_Action_prototype_executeHpDamage = Game_Action.prototype.executeHpDamage;
   Game_Action.prototype.executeHpDamage = function (target, value) {
-    if (target._barrierList && target._barrierList.length > 0) {
+    var skill = this.item();
+    if (target._barrierList && target._barrierList.length > 0 && !skill.meta.ignorebarrier) {
       //バリアリストに何か入ってる場合
       var blist = target._barrierList;
       target.result().barrieredDmg = [];
@@ -209,34 +215,35 @@
       if (value > 0) {
         var removalList = [];
         for (var i = 0; i < blist.length; i++) {
-          if (blist[i].value > value)  //割れなかった場合
-          {
-            var dmgObject = {};
-            dmgObject.id = blist[i].id;
-            dmgObject.value = value;
-            target.result().barrieredDmg.push(dmgObject);
+          if (blist[i].elements.length < 1 || this.barrierElementMatch(blist[i], skill))
 
-            blist[i].value -= value;
-            value = 0;
-            break;
-          }
-          else  //割れた場合
-          {
-            var breakObject = {};
-            breakObject.id = blist[i].id;
-            breakObject.value = blist[i].value;
-            target.result().barrieredBreak.push(breakObject);
+            if (blist[i].value > value)  //割れなかった場合
+            {
+              var dmgObject = {};
+              dmgObject.id = blist[i].id;
+              dmgObject.value = value;
+              target.result().barrieredDmg.push(dmgObject);
 
-            if (Piercing) {
-              value -= blist[i].value;
-            }
-            else {
+              blist[i].value -= value;
               value = 0;
+              break;
             }
-            removalList.push(blist[i].id);
-            console.log(PiercingChain);
-            if (!PiercingChain) { break; }
-          }
+            else  //割れた場合
+            {
+              var breakObject = {};
+              breakObject.id = blist[i].id;
+              breakObject.value = blist[i].value;
+              target.result().barrieredBreak.push(breakObject);
+
+              if (Piercing) {
+                value -= blist[i].value;
+              }
+              else {
+                value = 0;
+              }
+              removalList.push(blist[i].id);
+              if (!PiercingChain) { break; }
+            }
         }
         for (var i = 0; i < removalList.length; i++) {
           target.removeState(removalList[i]);
@@ -275,6 +282,20 @@
       }
     }
     Game_Action_prototype_executeHpDamage.call(this, target, value);
+  }
+
+  Game_Action.prototype.barrierElementMatch = function (barrier, skill) {
+    if (skill.damage.elementId < 0) {
+      var result = false;
+      this.subject().attackElements().forEach(function (e) {
+        if (barrier.elements.indexOf(e) > 0) {
+          result = true;
+        }
+      }, this)
+      return result;
+    } else {
+      return barrier.elements.indexOf(skill.damage.elementId.toString()) >= 0;
+    }
   }
 })();
 
