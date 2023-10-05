@@ -114,6 +114,10 @@
  * @desc カーソルの太さ（枠外の幅）
  * @default 2
  * 
+ * @param Fade Step
+ * @desc フェードイン、フェードアウトの速度。大きいほど早いが、0は一瞬（フェードインフェードアウト無し）
+ * @default 0
+ * 
  * 
  * @help 
 * プラグインコマンド
@@ -163,6 +167,8 @@
 
     var _cPadding = Number(parameters['Cursor Padding'] || 2);
     var _splitThumbnail = (parameters['Split ThumbNail'] == "true");
+
+    var _fadeStep = Number(parameters['Fade Step'] || 0);
 
     ImageManager.loadGallery = function (filename) {
         return this.loadBitmap(_directory, filename, 0, true);
@@ -259,6 +265,7 @@
         this._listWindow.hide();
         this._listWindow.deactivate();
         this._bigPicWindow.show();
+        this._bigPicWindow.startFadeIn();
         this._bigPicWindow.activate();
     }
 
@@ -284,7 +291,12 @@
 
         this._listWindow.show();
         this._listWindow.activate();
-        this._bigPicWindow.hide();
+
+        if (!_fadeStep)
+        {
+            this._bigPicWindow.hide();
+        }
+        this._bigPicWindow.startFadeOut();
         this._bigPicWindow.deactivate();
     }
 
@@ -562,6 +574,7 @@
         Window_Selectable.prototype.initialize.call(this, x, y, width, height);
         this.currentSabunIndex = 0;
         this.currentIndex = -1;
+        this._fadeDirection = 0;
         this.createPicSprite();
     };
 
@@ -598,6 +611,44 @@
     Window_PictureDetail.prototype.onTouch = function(triggered) {
         if (triggered) {
             this.processOk();
+        }
+    };
+
+    Window_PictureDetail.prototype.startFadeIn = function() {
+        if (!_fadeStep) return;
+
+        this._fadeDirection = 1;
+        this._picSprite.opacity = 0;
+    };
+
+    Window_PictureDetail.prototype.startFadeOut = function() {
+        if (!_fadeStep) return;
+        
+        this._fadeDirection = -1;
+        this._picSprite.opacity = 255;
+    };
+
+    var kz_Window_PictureDetail_prototype_update = Window_PictureDetail.prototype.update;
+    Window_PictureDetail.prototype.update = function() {
+        kz_Window_PictureDetail_prototype_update.call(this);
+
+        if (this._fadeDirection == 0) return;
+
+        this._picSprite.opacity += Math.round(this._fadeDirection * _fadeStep);
+
+        if (this._picSprite.opacity >= 255)
+        {
+            //フェードイン終了
+            this._fadeDirection = 0;
+            this._picSprite.opacity = 255;
+        }
+
+        if (this._picSprite.opacity <= 0)
+        {
+            //フェードアウト終了
+            this._fadeDirection = 0;
+            this._picSprite.opacity = 255;
+            this.hide();
         }
     };
 
