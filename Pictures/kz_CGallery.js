@@ -1,5 +1,5 @@
 /*:
- * @plugindesc v1.01 - CGモード
+ * @plugindesc v1.02 - CGモード
  * @author 剣崎宗二
  *
  * @param Columns per Page
