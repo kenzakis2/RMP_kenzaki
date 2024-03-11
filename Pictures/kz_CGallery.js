@@ -1,5 +1,151 @@
 /*:
- * @plugindesc v1.02 - CGモード
+ * @plugindesc v1.03 - CG Mode
+ * @author Souji Kenzaki
+ *
+ * @param Columns per Page
+ * @desc How many pictures lined horizontally in 1 page
+ * @default 3
+ *
+ * @param Rows per Page
+ * @desc How many pictures lined vertically in 1 page
+ * @default 3
+ *
+ * @param Total Gallery Slot
+ * @desc Total number of pictures (not counting partial changes)
+ * @default 10
+ *
+ * @param List Picture Width
+ * @desc Width of each Thumbnail in pixels
+ * @default 200
+ *
+ * @param List Picture Height
+ * @desc Height of each Thumbnail in pixels
+ * @default 100
+ *
+ * @param List Picture Spacing
+ * @desc Spacing between Thumbnails (in pixels)
+ * @default 12
+ * 
+ * @param Split ThumbNail
+ * @desc Use another pic for Thumbnail instead of shrinking first pic in the sequence?
+ * @type boolean
+ * @default false
+ * 
+ * @param List Overhead X
+ * @min -99999
+ * @desc x for the picture area
+ * @default 10
+ * 
+ * @param List Overhead Y
+ * @min -99999
+ * @desc y for the picture area
+ * @default 10
+ * 
+ * @param File Directory
+ * @desc Directory where CG pics are located
+ * @default img/pictures/
+ *
+ * @param File Name
+ * @desc prefix for CG pics
+ * @default Gallery_
+ * 
+ * @param CG Text
+ * @desc Description Text for CG pics
+ * @type string[]
+ * @default []
+ *
+ * @param Text X
+ * @min -99999
+ * @desc x of the description
+ * @default 10
+ * 
+ * @param Text Y
+ * @min -99999
+ * @desc y of the description
+ * @default 10
+ * 
+ * @param Page X
+ * @min -99999
+ * @desc x of the page number
+ * @default 10
+ * 
+ * @param Page Y
+ * @min -99999
+ * @desc y of the page number
+ * @default 10
+ * 
+ * @param Left Arrow
+ * @desc File Name for left arrow pic (without .png)
+ * @default Left
+ * 
+ * @param Left Arrow X
+ * @min -99999
+ * @desc x of Left Arrow pic
+ * @default 10
+ * 
+ * @param Left Arrow Y
+ * @min -99999
+ * @desc y of Left Arrow Pic
+ * @default 10
+ * 
+ * @param Right Arrow
+ * @desc File Name for right arrow pic (without .png)
+ * @default Right
+ * 
+ * @param Right Arrow X
+ * @min -99999
+ * @desc x of Right Arrow
+ * @default 10
+ * 
+ * @param Right Arrow Y
+ * @min -99999
+ * @desc y of Right Arrow Pic
+ * @default 10
+ * 
+ * @param Text Width
+ * @desc Width of Text
+ * @default 10
+ * 
+ * @param Text Height
+ * @desc Height of text
+ * @default 10
+ * 
+ * @param Cursor Padding
+ * @desc Cursor Width (how much of it is drawn outside the pic)
+ * @default 2
+ * 
+ * @param Fade Step
+ * @desc Speed of Fade in and Fade out. Bigger the number the faster the fade. However, 0 means pic switch instantly
+ * @default 0
+ * 
+ * 
+ * @help 
+ * Plugin Commands are as below:
+ *
+ * picture_gallery : open the CG Scene
+ * 
+ * enable_picture [ID] : Add picture to the CG Scene
+ * disable_picture [ID] : remove Picture from ID Scene
+ *
+ * add_sabun [ID] [last ID number]: Add variation to a pic. Basically it means when you choose a pic, you can press confirm to see the next variation
+ * 
+ * Other Notes:
+ *
+ * Have a file with File Name + bak  (ex:Gallery_bak.png) to set background to the scene
+ *
+ * Example
+ * After command 
+ * enable_picture 3
+ * then
+ * add_sabun 3 4
+ * to have 
+ * Pic 3 as Thumbnail and 1st enlarged picture, then display Pic_3_1.png～Pic_3_4.png in order.
+ * You can also use "add_sabun_single 4" to load 1 variation only. (in this case, 3_1~3_3 will be skipped, and the transition will be 3 → 3_4)
+ * If Split ThumbNail is set to true, ThumbNail will be Pic_3.png, but the first picture after enlarging will be Pic3_0.png instead.
+ */
+
+/*:ja
+ * @plugindesc v1.03 - CGモード
  * @author 剣崎宗二
  *
  * @param Columns per Page
@@ -85,7 +231,7 @@
  * 
  * @param Left Arrow Y
  * @min -99999
- * @desc 左矢印X
+ * @desc 左矢印Y
  * @default 10
  * 
  * @param Right Arrow
@@ -94,12 +240,12 @@
  * 
  * @param Right Arrow X
  * @min -99999
- * @desc 左矢印X
+ * @desc 右矢印X
  * @default 10
  * 
  * @param Right Arrow Y
  * @min -99999
- * @desc 左矢印X
+ * @desc 右矢印Y
  * @default 10
  * 
  * @param Text Width
