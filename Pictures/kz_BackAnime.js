@@ -12,7 +12,7 @@
  */
 (function () {
     var parameters = PluginManager.parameters('kz_BackAnime');
-    var backAnimeIds = parameters['Back Anime Id'];
+    var backAnimeIds = JSON.parse(parameters['Back Anime Id']);
 
 
     var kz_Sprite_Base_prototype_startAnimation = Sprite_Base.prototype.startAnimation;
