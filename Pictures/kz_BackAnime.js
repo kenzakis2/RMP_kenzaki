@@ -12,12 +12,13 @@
  */
 (function () {
     var parameters = PluginManager.parameters('kz_BackAnime');
-    var backAnimeIds = JSON.parse(parameters['Back Anime Id']);
-
+    var backAnimeIds = JSON.parse(parameters['Back Anime Id']).map(function(e){
+        return Number(e);
+    });
 
     var kz_Sprite_Base_prototype_startAnimation = Sprite_Base.prototype.startAnimation;
     Sprite_Base.prototype.startAnimation = function (animation, mirror, delay) {
-        if (backAnimeIds.indexOf(animation.id) >= 0) {
+        if (backAnimeIds.indexOf(Number(animation.id)) >= 0) {
             var sprite = new Sprite_Animation();
             sprite.setup(this._effectTarget, animation, mirror, delay);
             var index = this.findFirstBattlerIndex();
