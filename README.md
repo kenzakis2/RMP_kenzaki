@@ -1,9 +1,7 @@
 ﻿# RMP_kenzaki
 RPGツクールMV/RPG Maker MV plugins
 
-以下各プラグインについて、使用に関しては特に制限はございません。（剣崎の所のプラグイン使ったよ！とReadmeに名前が入っていれば無論うれしいですが）
-
-ただ、著作権は未だに放棄しておりませんので、ご自身が作ったものとしてそのまま再配布するのはご遠慮ください…
+以下各プラグインについて、ライセンスはMITライセンスに準じます。
 
 I have English descriptions too if you would like. please ask me.
 
