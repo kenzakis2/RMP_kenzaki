@@ -492,7 +492,7 @@
         this._leftArrowSprite.y = _lY;
         this.addChild(this._leftArrowSprite);
 
-        this._rightArrowSprite = new Sprite_Text();
+        this._rightArrowSprite = new Sprite_Base();
         this._rightArrowSprite.bitmap = ImageManager.loadGallery(_rFile);
         this._rightArrowSprite.x = _rX;
         this._rightArrowSprite.y = _rY;
